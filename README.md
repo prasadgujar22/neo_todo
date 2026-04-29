@@ -17,5 +17,15 @@ Features
 - Minimal dependencies (no UI libraries)
 - Responsive UI with a clean, contemporary look
 
+Screenshots
+
+### Empty state
+
+![Neo Todo empty state](docs/screenshots/neo-todo-empty.png)
+
+### Todo list with tasks
+
+![Neo Todo with sample tasks](docs/screenshots/neo-todo-with-tasks.png)
+
 Notes
-- This is a local, self-contained app. No remote repo is created by me.
+- This is a local, self-contained app with no backend dependency.
