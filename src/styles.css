@@ -1,35 +1,77 @@
 :root{
-  --bg: #0b1020;
-  --card: #141927;
-  --text: #e8eaf6;
-  --muted: #a1a8b8;
-  --accent: #6ee7b7;
-  --border: rgba(255,255,255,.08);
+  color-scheme: light;
+  --bg: #f7f8fc;
+  --bg-accent: #edf1f8;
+  --card: rgba(255,255,255,.88);
+  --text: #131827;
+  --muted: #657187;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --border: rgba(19,24,39,.10);
+  --input: #ffffff;
+  --toggle: #ffffff;
+  --toggle-active: #2563eb;
+  --delete: #dc2626;
+  --shadow: 0 24px 80px rgba(35,46,75,.14);
+  --focus: rgba(37,99,235,.18);
 }
+
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --bg: #0b1020;
+    --bg-accent: #111827;
+    --card: rgba(20,24,39,.84);
+    --text: #e8eaf6;
+    --muted: #a1a8b8;
+    --accent: #6ee7b7;
+    --accent-strong: #34d399;
+    --border: rgba(255,255,255,.10);
+    --input: #1b1f2a;
+    --toggle: #1e2542;
+    --toggle-active: #10b981;
+    --delete: #f87171;
+    --shadow: 0 24px 80px rgba(0,0,0,.28);
+    --focus: rgba(110,231,183,.16);
+  }
+}
+
 *{box-sizing:border-box}
 html, body, #root{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family: ui-sans-serif, system-ui, -apple-system;overflow-x:hidden}
+body{
+  margin:0;
+  color:var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow-x:hidden;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 18%, transparent), transparent 34rem),
+    linear-gradient(135deg, var(--bg), var(--bg-accent));
+}
 .neo-todo-root{width:100%;max-width:100vw;min-height:100%;display:flex;flex-direction:column;align-items:center;padding:32px;overflow-x:hidden}
 .header{text-align:center;margin-bottom:16px}
 .title{font-size: clamp(28px, 4vw, 44px); margin:0;letter-spacing:.5px}
 .subtitle{color:var(--muted);margin:6px 0 0}
-.card{width: min(720px, 100%);max-width:100%;background: rgba(20,24,39,.8);border:1px solid var(--border);border-radius:14px;padding:20px;backdrop-filter: blur(2px);}
+.card{width: min(720px, 100%);max-width:100%;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:var(--shadow);backdrop-filter: blur(12px);}
 .inputRow{display:flex;gap:12px;margin-bottom:14px}
-.new-todo{flex:1;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:#1b1f2a;color:var(--text);outline:none}
-.new-todo:focus{border-color:#8ab4ff;box-shadow:0 0 0 4px rgba(138,180,255,.15)}
-.addBtn{padding:12px 16px;border-radius:8px;border:0;background:#2b324a;color:white;cursor:pointer}
-.addBtn:hover{filter: brightness(1.05)}
+.new-todo{flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);outline:none}
+.new-todo::placeholder{color:color-mix(in srgb, var(--muted) 78%, transparent)}
+.new-todo:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--focus)}
+.addBtn{padding:12px 18px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 10px 24px color-mix(in srgb, var(--accent) 24%, transparent)}
+.addBtn:hover{background:var(--accent-strong);transform:translateY(-1px)}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;color:var(--muted);max-width:100%}
 .empty-icon{font-size:40px;margin-bottom:12px}
 .todo-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--border)}
 .todo-item{display:flex;align-items:center;gap:12px;padding:12px 6px;border-bottom:1px solid var(--border)}
-.todo-item .toggle{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#1e2542;color:white;cursor:pointer}
-.todo-item .text{flex:1;cursor:default}
-.todo-item.completed .text{text-decoration: line-through; color: #7a819a}
-.todo-item .delete{background:transparent;border:0;cursor:pointer;color:#e66b6b;font-size:16px}
+.todo-item .toggle{width:28px;height:28px;border-radius:9px;border:1px solid var(--border);background:var(--toggle);color:#fff;cursor:pointer;display:grid;place-items:center}
+.todo-item.completed .toggle{background:var(--toggle-active);border-color:var(--toggle-active)}
+.todo-item .text{flex:1;min-width:0;cursor:default;overflow-wrap:anywhere}
+.todo-item.completed .text{text-decoration: line-through; color:var(--muted)}
+.todo-item .delete{background:transparent;border:0;cursor:pointer;color:var(--delete);font-size:16px;border-radius:8px;padding:6px}
+.todo-item .delete:hover{background:color-mix(in srgb, var(--delete) 10%, transparent)}
 .footerBar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
 .stats{display:flex;gap:16px;font-size:14px;color:var(--muted)}
-.clearBtn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;cursor:pointer}
+.clearBtn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+.clearBtn:not(:disabled):hover{border-color:var(--accent);color:var(--accent)}
 .clearBtn:disabled{opacity:.5;cursor:not-allowed}
 @media (max-width: 600px){
   .neo-todo-root{padding:24px 12px}

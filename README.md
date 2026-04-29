@@ -16,6 +16,7 @@ Features
 - Accessible labels and keyboard-friendly controls (Enter to add; toggle with click or keyboard/select)
 - Minimal dependencies (no UI libraries)
 - Responsive UI with a clean, contemporary look
+- Reacts to the OS color scheme: light by default, dark when the system is in dark mode
 
 Screenshots
 
