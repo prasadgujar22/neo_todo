@@ -2,11 +2,17 @@
 
 Neo Todo is a polished, minimal React todo app built in this Vite repo. It persists state to localStorage and provides a clean, responsive UI for desktop and mobile.
 
+Live app: https://neo-todo-peach.vercel.app/
+
 How to use
 - Install dependencies: `npm install`
 - Start dev server: `npm run dev`
 - Build for production: `npm run build`
 - Preview production build: `npm run preview`
+
+Deployment
+- Hosted on Vercel: https://neo-todo-peach.vercel.app/
+- Production builds are generated with `npm run build`.
 
 Features
 - Add todos, toggle complete, delete, and clear completed
