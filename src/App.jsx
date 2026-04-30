@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import Stats from './components/Stats.jsx'
 import TodoList from './components/TodoList.jsx'
+import { formatDayAndDate } from './dateFormatter.js'
 
 // Minimal, accessible React Todo app with localStorage persistence
 const STORAGE_KEY = 'neo_todo.todos'
@@ -74,12 +75,14 @@ export default function App() {
   }
 
   const visibleTodos = useMemo(() => todos, [todos])
+  const todayLabel = useMemo(() => formatDayAndDate(), [])
 
   return (
     <div className="neo-todo-root" aria-label="Neo Todo">
       <header className="header">
         <h1 className="title">Neo Todo</h1>
         <p className="subtitle">A polished, minimal React todo app</p>
+        <p className="today" aria-label="Today">{todayLabel}</p>
       </header>
 
       <section className="card" aria-label="Todo panel">
