@@ -80,9 +80,9 @@ export default function App() {
   const todayLabel = useMemo(() => formatDayAndDate(), [])
 
   return (
-    <div className="neo-todo-root" aria-label="Neo Todo">
+    <div className="neo-todo-root" aria-label="Neo To-Do">
       <header className="header">
-        <h1 className="title">Neo Todo</h1>
+        <h1 className="title">Neo To-Do</h1>
         <p className="subtitle">A polished, minimal React todo app</p>
         <p className="today" aria-label="Today">{todayLabel}</p>
       </header>
