@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Stats from './components/Stats.jsx'
 import TodoList from './components/TodoList.jsx'
+import ShareButton from './components/ShareButton.jsx'
 import { formatDayAndDate } from './dateFormatter.js'
 
 // Minimal, accessible React Todo app with localStorage persistence
@@ -74,6 +75,7 @@ export default function App() {
     }
   }
 
+  const cardRef = useRef(null)
   const visibleTodos = useMemo(() => todos, [todos])
   const todayLabel = useMemo(() => formatDayAndDate(), [])
 
@@ -85,7 +87,7 @@ export default function App() {
         <p className="today" aria-label="Today">{todayLabel}</p>
       </header>
 
-      <section className="card" aria-label="Todo panel">
+      <section className="card" aria-label="Todo panel" ref={cardRef}>
         <div className="inputRow">
           <input
             aria-label="New todo"
@@ -112,6 +114,9 @@ export default function App() {
           >
             Clear completed
           </button>
+        </div>
+        <div className="shareRow">
+          <ShareButton targetRef={cardRef} />
         </div>
       </section>
     </div>

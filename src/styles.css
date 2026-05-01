@@ -74,6 +74,12 @@ body{
 .clearBtn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
 .clearBtn:not(:disabled):hover{border-color:var(--accent);color:var(--accent)}
 .clearBtn:disabled{opacity:.5;cursor:not-allowed}
+.shareRow{margin-top:10px;display:flex;justify-content:center}
+.shareBtn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:14px;cursor:pointer;transition:background .15s,color .15s,transform .1s}
+.shareBtn:hover:not(:disabled){background:var(--accent);color:#fff;transform:translateY(-1px)}
+.shareBtn:disabled{opacity:.6;cursor:not-allowed}
+.shareBtn-spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 @media (max-width: 600px){
   .neo-todo-root{padding:24px 12px}
   .card{width:100%;padding:16px}
