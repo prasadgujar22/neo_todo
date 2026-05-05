@@ -3,15 +3,25 @@ import Stats from './components/Stats.jsx'
 import TodoList from './components/TodoList.jsx'
 import ShareButton from './components/ShareButton.jsx'
 import { formatDayAndDate } from './dateFormatter.js'
+import { getSharedTodos } from './utils/shareUrl.js'
 
 // Minimal, accessible React Todo app with localStorage persistence
 const STORAGE_KEY = 'neo_todo.todos'
 
 function getInitialTodos() {
+  // Shared URL takes priority over local storage
+  const shared = getSharedTodos()
+  if (shared) {
+    // Persist the shared list locally so the recipient owns it going forward
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(shared))
+    // Clean up the URL so it doesn't re-import on every refresh
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+    return shared
+  }
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
-
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed : []
   } catch {
@@ -75,7 +85,6 @@ export default function App() {
     }
   }
 
-  const cardRef = useRef(null)
   const visibleTodos = useMemo(() => todos, [todos])
   const todayLabel = useMemo(() => formatDayAndDate(), [])
 
@@ -87,7 +96,7 @@ export default function App() {
         <p className="today" aria-label="Today">{todayLabel}</p>
       </header>
 
-      <section className="card" aria-label="Todo panel" ref={cardRef}>
+      <section className="card" aria-label="Todo panel">
         <div className="inputRow">
           <input
             aria-label="New todo"
@@ -116,7 +125,7 @@ export default function App() {
           </button>
         </div>
         <div className="shareRow">
-          <ShareButton targetRef={cardRef} />
+          <ShareButton todos={todos} />
         </div>
       </section>
     </div>

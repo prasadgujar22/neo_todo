@@ -1,61 +1,58 @@
 import { useState } from 'react'
-import { toPng } from 'html-to-image'
+import { buildShareUrl } from '../utils/shareUrl.js'
 
-export default function ShareButton({ targetRef }) {
-  const [loading, setLoading] = useState(false)
+export default function ShareButton({ todos }) {
+  const [status, setStatus] = useState('idle') // 'idle' | 'copied' | 'error'
 
   const handleShare = async () => {
-    if (!targetRef?.current) return
-    setLoading(true)
-    try {
-      const dataUrl = await toPng(targetRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        style: { backdropFilter: 'none' }
-      })
+    const url = buildShareUrl(todos)
 
-      // Try Web Share API with file (works great on mobile)
-      if (typeof navigator.canShare === 'function') {
-        const blob = await (await fetch(dataUrl)).blob()
-        const file = new File([blob], 'neo-todo.png', { type: 'image/png' })
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ title: 'My Neo Todo List', files: [file] })
-          setLoading(false)
-          return
-        }
+    // Try Web Share API first (native share sheet on mobile)
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: 'My Neo Todo List', url })
+        return
+      } catch (err) {
+        // User cancelled or share failed — fall through to clipboard
+        if (err.name === 'AbortError') return
       }
+    }
 
-      // Fallback: trigger download
-      const link = document.createElement('a')
-      link.download = 'neo-todo.png'
-      link.href = dataUrl
-      link.click()
-    } catch (err) {
-      console.error('Share failed:', err)
-    } finally {
-      setLoading(false)
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(url)
+      setStatus('copied')
+      setTimeout(() => setStatus('idle'), 2000)
+    } catch {
+      setStatus('error')
+      setTimeout(() => setStatus('idle'), 2500)
     }
   }
+
+  const label =
+    status === 'copied' ? 'Link copied!' :
+    status === 'error'  ? 'Copy failed' :
+    'Share via Link'
 
   return (
     <button
       className="shareBtn"
       onClick={handleShare}
-      disabled={loading}
-      aria-label="Share todo list as image"
+      aria-label="Share todo list via link"
     >
-      {loading ? (
-        <span className="shareBtn-spinner" aria-hidden="true" />
+      {status === 'copied' ? (
+        // Checkmark icon
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
       ) : (
-        <>
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-            <polyline points="16 6 12 2 8 6"/>
-            <line x1="12" y1="2" x2="12" y2="15"/>
-          </svg>
-          Share as Image
-        </>
+        // Link icon
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
       )}
+      {label}
     </button>
   )
 }
