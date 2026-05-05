@@ -1,47 +1,67 @@
 import { useState } from 'react'
 import { buildShareUrl } from '../utils/shareUrl.js'
 
+async function shortenUrl(longUrl) {
+  const res = await fetch('/api/shorten', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: longUrl }),
+  })
+  if (!res.ok) throw new Error('Shorten API error')
+  const { short } = await res.json()
+  return short
+}
+
 export default function ShareButton({ todos }) {
-  const [status, setStatus] = useState('idle') // 'idle' | 'copied' | 'error'
+  const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'copied' | 'error'
 
   const handleShare = async () => {
-    const url = buildShareUrl(todos)
+    if (status === 'loading') return
+    setStatus('loading')
 
-    // Try Web Share API first (native share sheet on mobile)
-    if (typeof navigator.share === 'function') {
-      try {
-        await navigator.share({ title: 'My Neo Todo List', url })
-        return
-      } catch (err) {
-        // User cancelled or share failed — fall through to clipboard
-        if (err.name === 'AbortError') return
-      }
-    }
-
-    // Fallback: copy to clipboard
     try {
+      const longUrl = buildShareUrl(todos)
+      const url = await shortenUrl(longUrl)
+
+      // Try native share sheet first (great on mobile)
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title: 'My Neo Todo List', url })
+          setStatus('idle')
+          return
+        } catch (err) {
+          if (err.name === 'AbortError') { setStatus('idle'); return }
+          // fall through to clipboard
+        }
+      }
+
       await navigator.clipboard.writeText(url)
       setStatus('copied')
       setTimeout(() => setStatus('idle'), 2000)
-    } catch {
+    } catch (err) {
+      console.error('Share failed:', err)
       setStatus('error')
       setTimeout(() => setStatus('idle'), 2500)
     }
   }
 
   const label =
-    status === 'copied' ? 'Link copied!' :
-    status === 'error'  ? 'Copy failed' :
+    status === 'loading' ? 'Shortening…' :
+    status === 'copied'  ? 'Link copied!' :
+    status === 'error'   ? 'Failed — try again' :
     'Share via Link'
 
   return (
     <button
       className="shareBtn"
       onClick={handleShare}
-      aria-label="Share todo list via link"
+      disabled={status === 'loading'}
+      aria-label="Share todo list via shortened link"
     >
-      {status === 'copied' ? (
-        // Checkmark icon
+      {status === 'loading' ? (
+        <span className="shareBtn-spinner" aria-hidden="true" />
+      ) : status === 'copied' ? (
+        // Checkmark
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
