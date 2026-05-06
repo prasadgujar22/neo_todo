@@ -1,26 +1,37 @@
 import { useMemo, useRef, useState } from 'react'
 import Stats from './components/Stats.jsx'
 import TodoList from './components/TodoList.jsx'
+import GroupSection from './components/GroupSection.jsx'
 import ShareButton from './components/ShareButton.jsx'
 import { formatDayAndDate } from './dateFormatter.js'
 import { getSharedTodos } from './utils/shareUrl.js'
 
 // Minimal, accessible React Todo app with localStorage persistence
 const STORAGE_KEY = 'neo_todo.todos'
+const GROUPS_KEY = 'neo_todo.groups'
 
 function getInitialTodos() {
   // Shared URL takes priority over local storage
   const shared = getSharedTodos()
   if (shared) {
-    // Persist the shared list locally so the recipient owns it going forward
     localStorage.setItem(STORAGE_KEY, JSON.stringify(shared))
-    // Clean up the URL so it doesn't re-import on every refresh
     history.replaceState(null, '', window.location.pathname + window.location.search)
     return shared
   }
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function getInitialGroups() {
+  try {
+    const raw = localStorage.getItem(GROUPS_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed : []
@@ -40,16 +51,30 @@ function EmptyState() {
 
 export default function App() {
   const [todos, setTodosState] = useState(getInitialTodos)
+  const [groups, setGroupsState] = useState(getInitialGroups)
   const [input, setInput] = useState('')
+  const [selectedGroupId, setSelectedGroupId] = useState('')
+  const [newGroupInput, setNewGroupInput] = useState('')
+  const [showGroupInput, setShowGroupInput] = useState(false)
 
+  // Persisted setters
   const setTodos = (updater) => {
-    setTodosState((currentTodos) => {
-      const nextTodos = typeof updater === 'function' ? updater(currentTodos) : updater
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextTodos))
-      return nextTodos
+    setTodosState((current) => {
+      const next = typeof updater === 'function' ? updater(current) : updater
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
     })
   }
 
+  const setGroups = (updater) => {
+    setGroupsState((current) => {
+      const next = typeof updater === 'function' ? updater(current) : updater
+      localStorage.setItem(GROUPS_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  // --- Todo actions ---
   const addTodo = (text) => {
     const trimmed = text?.trim()
     if (!trimmed) return
@@ -57,7 +82,8 @@ export default function App() {
       id: Date.now(),
       text: trimmed,
       completed: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      groupId: selectedGroupId || null
     }
     setTodos((t) => [newTodo, ...t])
     setInput('')
@@ -75,18 +101,47 @@ export default function App() {
     setTodos((list) => list.filter((t) => !t.completed))
   }
 
+  // --- Group actions ---
+  const createGroup = (title) => {
+    const trimmed = title?.trim()
+    if (!trimmed) return
+    const group = { id: Date.now(), title: trimmed, createdAt: new Date().toISOString() }
+    setGroups((g) => [...g, group])
+    setNewGroupInput('')
+    setShowGroupInput(false)
+    setSelectedGroupId(String(group.id))
+  }
+
+  const deleteGroup = (groupId) => {
+    // Ungroup todos that belonged to this group — don't nuke them
+    setTodos((list) =>
+      list.map((t) => (t.groupId === groupId ? { ...t, groupId: null } : t))
+    )
+    setGroups((g) => g.filter((grp) => grp.id !== groupId))
+    if (String(selectedGroupId) === String(groupId)) setSelectedGroupId('')
+  }
+
+  // --- Derived ---
   const total = todos.length
   const active = todos.filter((t) => !t.completed).length
   const completed = total - active
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      addTodo(input)
-    }
+  const ungroupedTodos = useMemo(
+    () => todos.filter((t) => !t.groupId),
+    [todos]
+  )
+
+  const todayLabel = useMemo(() => formatDayAndDate(), [])
+
+  const handleTodoKeyDown = (e) => {
+    if (e.key === 'Enter') addTodo(input)
   }
 
-  const visibleTodos = useMemo(() => todos, [todos])
-  const todayLabel = useMemo(() => formatDayAndDate(), [])
+  const handleGroupKeyDown = (e) => {
+    if (e.key === 'Enter') createGroup(newGroupInput)
+  }
+
+  const hasContent = total > 0 || groups.length > 0
 
   return (
     <div className="neo-todo-root" aria-label="Neo To-Do">
@@ -97,6 +152,7 @@ export default function App() {
       </header>
 
       <section className="card" aria-label="Todo panel">
+        {/* Add task row */}
         <div className="inputRow">
           <input
             aria-label="New todo"
@@ -104,15 +160,80 @@ export default function App() {
             placeholder="What needs to be done?"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleTodoKeyDown}
           />
+          {groups.length > 0 && (
+            <select
+              className="group-select"
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+              aria-label="Select group for new task"
+            >
+              <option value="">No group</option>
+              {groups.map((g) => (
+                <option key={g.id} value={String(g.id)}>{g.title}</option>
+              ))}
+            </select>
+          )}
           <button className="addBtn" onClick={() => addTodo(input)} aria-label="Add todo">Add</button>
         </div>
-        {total === 0 ? <EmptyState /> : (
+
+        {/* Group creation row */}
+        <div className="groupRow">
+          {showGroupInput ? (
+            <div className="groupInputRow">
+              <input
+                autoFocus
+                className="group-name-input"
+                placeholder="Group name…"
+                value={newGroupInput}
+                onChange={(e) => setNewGroupInput(e.target.value)}
+                onKeyDown={handleGroupKeyDown}
+                aria-label="New group name"
+              />
+              <button className="groupCreateBtn" onClick={() => createGroup(newGroupInput)}>Create</button>
+              <button className="groupCancelBtn" onClick={() => { setShowGroupInput(false); setNewGroupInput('') }}>Cancel</button>
+            </div>
+          ) : (
+            <button className="newGroupBtn" onClick={() => setShowGroupInput(true)}>
+              + New Group
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        {!hasContent ? (
+          <EmptyState />
+        ) : (
           <div className="content">
-            <TodoList todos={visibleTodos} onToggle={toggleTodo} onDelete={deleteTodo} />
+            {/* Grouped sections */}
+            {groups.map((group) => (
+              <GroupSection
+                key={group.id}
+                group={group}
+                todos={todos.filter((t) => String(t.groupId) === String(group.id))}
+                onToggle={toggleTodo}
+                onDelete={deleteTodo}
+                onDeleteGroup={deleteGroup}
+              />
+            ))}
+
+            {/* Ungrouped todos */}
+            {ungroupedTodos.length > 0 && (
+              <div className={groups.length > 0 ? 'group-section group-section--ungrouped' : ''}>
+                {groups.length > 0 && (
+                  <div className="group-header group-header--ungrouped">
+                    <span className="group-title-icon">📋</span>
+                    <h2 className="group-title">Ungrouped</h2>
+                    <span className="group-count">{ungroupedTodos.length}</span>
+                  </div>
+                )}
+                <TodoList todos={ungroupedTodos} onToggle={toggleTodo} onDelete={deleteTodo} />
+              </div>
+            )}
           </div>
         )}
+
         <div className="footerBar">
           <Stats total={total} active={active} completed={completed} />
           <button

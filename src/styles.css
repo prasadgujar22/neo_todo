@@ -74,6 +74,30 @@ body{
 .clearBtn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
 .clearBtn:not(:disabled):hover{border-color:var(--accent);color:var(--accent)}
 .clearBtn:disabled{opacity:.5;cursor:not-allowed}
+/* ── Group styles ── */
+.groupRow{margin-bottom:12px;display:flex;align-items:center}
+.newGroupBtn{background:transparent;border:1px dashed var(--accent);color:var(--accent);padding:7px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:background .15s,color .15s}
+.newGroupBtn:hover{background:color-mix(in srgb, var(--accent) 10%, transparent)}
+.groupInputRow{display:flex;gap:8px;width:100%;align-items:center}
+.group-name-input{flex:1;min-width:0;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--text);outline:none;font-size:14px}
+.group-name-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus)}
+.groupCreateBtn{padding:8px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap}
+.groupCreateBtn:hover{background:var(--accent-strong)}
+.groupCancelBtn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;white-space:nowrap}
+.groupCancelBtn:hover{border-color:var(--delete);color:var(--delete)}
+.group-select{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:13px;cursor:pointer;outline:none;max-width:140px}
+.group-select:focus{border-color:var(--accent)}
+.group-section{margin-bottom:16px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.group-section--ungrouped{background:color-mix(in srgb, var(--bg-accent) 40%, transparent)}
+.group-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:color-mix(in srgb, var(--accent) 8%, transparent);border-bottom:1px solid var(--border)}
+.group-header--ungrouped{background:color-mix(in srgb, var(--muted) 8%, transparent)}
+.group-title-icon{font-size:16px;line-height:1}
+.group-title{flex:1;margin:0;font-size:15px;font-weight:700;letter-spacing:.2px;color:var(--text)}
+.group-count{font-size:12px;font-weight:600;background:color-mix(in srgb, var(--accent) 15%, transparent);color:var(--accent);padding:2px 8px;border-radius:20px;min-width:22px;text-align:center}
+.group-delete-btn{background:transparent;border:0;cursor:pointer;color:var(--muted);font-size:13px;padding:4px 6px;border-radius:6px;line-height:1;transition:color .15s,background .15s}
+.group-delete-btn:hover{color:var(--delete);background:color-mix(in srgb, var(--delete) 10%, transparent)}
+.group-empty{padding:14px 16px;font-size:13px;color:var(--muted);font-style:italic}
+.group-section .todo-list{border-top:none}
 .shareRow{margin-top:10px;display:flex;justify-content:center}
 .shareBtn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:14px;cursor:pointer;transition:background .15s,color .15s,transform .1s}
 .shareBtn:hover:not(:disabled){background:var(--accent);color:#fff;transform:translateY(-1px)}
