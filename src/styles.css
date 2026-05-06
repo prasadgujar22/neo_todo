@@ -74,6 +74,15 @@ body{
 .clearBtn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
 .clearBtn:not(:disabled):hover{border-color:var(--accent);color:var(--accent)}
 .clearBtn:disabled{opacity:.5;cursor:not-allowed}
+/* ── Drag & drop ── */
+.drag-handle{background:transparent;border:0;cursor:grab;color:var(--muted);font-size:18px;padding:4px 6px;border-radius:6px;line-height:1;touch-action:none;flex-shrink:0}
+.drag-handle:active{cursor:grabbing}
+.drag-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.is-dragging{opacity:.35}
+.drag-overlay{box-shadow:0 8px 32px rgba(0,0,0,.22);border-radius:10px;background:var(--card);backdrop-filter:blur(12px);list-style:none;cursor:grabbing;border:1px solid var(--accent);opacity:.95}
+.sortable-list{min-height:4px}
+.sortable-list--empty{min-height:48px}
+.group-section--over .sortable-list--empty{background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:0 0 14px 14px}
 /* ── Group styles ── */
 .groupRow{margin-bottom:12px;display:flex;align-items:center}
 .newGroupBtn{background:transparent;border:1px dashed var(--accent);color:var(--accent);padding:7px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:background .15s,color .15s}
@@ -87,7 +96,8 @@ body{
 .groupCancelBtn:hover{border-color:var(--delete);color:var(--delete)}
 .group-select{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:13px;cursor:pointer;outline:none;max-width:140px}
 .group-select:focus{border-color:var(--accent)}
-.group-section{margin-bottom:16px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.group-section{margin-bottom:16px;border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .15s}
+.group-section--over{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus)}
 .group-section--ungrouped{background:color-mix(in srgb, var(--bg-accent) 40%, transparent)}
 .group-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:color-mix(in srgb, var(--accent) 8%, transparent);border-bottom:1px solid var(--border)}
 .group-header--ungrouped{background:color-mix(in srgb, var(--muted) 8%, transparent)}
