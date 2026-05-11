@@ -3,6 +3,18 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import SortableTodoItem from './SortableTodoItem.jsx'
 
+const IconFolder = () => (
+  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+    <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2H5.38a1.5 1.5 0 0 1 1.06.44l.62.62h5.44A1.5 1.5 0 0 1 14 4.5v7A1.5 1.5 0 0 1 12.5 13h-10A1.5 1.5 0 0 1 1 11.5v-8Z" fill="currentColor" opacity=".9"/>
+  </svg>
+)
+
+const IconClipboard = () => (
+  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+    <path d="M5 1.5A1.5 1.5 0 0 1 6.5 0h2A1.5 1.5 0 0 1 10 1.5H11A1.5 1.5 0 0 1 12.5 3v10A1.5 1.5 0 0 1 11 14.5H4A1.5 1.5 0 0 1 2.5 13V3A1.5 1.5 0 0 1 4 1.5h1Zm1.5-1a.5.5 0 0 0-.5.5V2h4v-.5a.5.5 0 0 0-.5-.5h-3Zm-2 2a.5.5 0 0 0-.5.5V13a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H10v.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V2.5H4.5Z" fill="currentColor"/>
+  </svg>
+)
+
 export default function GroupSection({ group, todos, onToggle, onDelete, onUpdate, onDeleteGroup, onRenameGroup, isUngrouped }) {
   const [collapsed, setCollapsed] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
@@ -12,19 +24,6 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
   const { setNodeRef, isOver } = useDroppable({ id: containerId })
 
   const title = isUngrouped ? 'Ungrouped' : group.title
-
-  const IconFolder = () => (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-      <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2H5.38a1.5 1.5 0 0 1 1.06.44l.62.62h5.44A1.5 1.5 0 0 1 14 4.5v7A1.5 1.5 0 0 1 12.5 13h-10A1.5 1.5 0 0 1 1 11.5v-8Z" fill="currentColor" opacity=".9"/>
-    </svg>
-  )
-
-  const IconClipboard = () => (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-      <path d="M5 1.5A1.5 1.5 0 0 1 6.5 0h2A1.5 1.5 0 0 1 10 1.5H11A1.5 1.5 0 0 1 12.5 3v10A1.5 1.5 0 0 1 11 14.5H4A1.5 1.5 0 0 1 2.5 13V3A1.5 1.5 0 0 1 4 1.5h1Zm1.5-1a.5.5 0 0 0-.5.5V2h4v-.5a.5.5 0 0 0-.5-.5h-3Zm-2 2a.5.5 0 0 0-.5.5V13a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H10v.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V2.5H4.5Z" fill="currentColor"/>
-    </svg>
-  )
-
   const icon = isUngrouped ? <IconClipboard /> : <IconFolder />
 
   const saveRename = () => {
