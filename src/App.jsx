@@ -220,42 +220,54 @@ export default function App() {
 
       <section className="card" aria-label="Todo panel">
         <div className="inputRow inputRow--stackable">
-          <input
-            aria-label="New todo"
-            className="new-todo"
-            placeholder="What needs to be done?"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleTodoKeyDown}
-          />
+          <label className="field field--task">
+            <span className="field-label">Task</span>
+            <input
+              aria-label="New todo"
+              className="new-todo"
+              placeholder="What needs to be done?"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleTodoKeyDown}
+            />
+          </label>
           {groups.length > 0 && (
-            <select
-              className="group-select"
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-              aria-label="Select group for new task"
-            >
-              <option value="">No group</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>{g.title}</option>
-              ))}
-            </select>
+            <label className="field field--compact">
+              <span className="field-label">Group</span>
+              <select
+                className="group-select"
+                value={selectedGroupId}
+                onChange={(e) => setSelectedGroupId(e.target.value)}
+                aria-label="Select group for new task"
+              >
+                <option value="">No group</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.title}</option>
+                ))}
+              </select>
+            </label>
           )}
-          <select
-            className="priority-select"
-            value={newTodoPriority}
-            onChange={(e) => setNewTodoPriority(e.target.value)}
-            aria-label="Select priority for new task"
-          >
-            {PRIORITIES.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
-          </select>
-          <input
-            className="due-date-input"
-            type="date"
-            value={newTodoDueDate}
-            onChange={(e) => setNewTodoDueDate(e.target.value)}
-            aria-label="Due date for new task"
-          />
+          <label className="field field--compact">
+            <span className="field-label">Priority</span>
+            <select
+              className="priority-select"
+              value={newTodoPriority}
+              onChange={(e) => setNewTodoPriority(e.target.value)}
+              aria-label="Select priority for new task"
+            >
+              {PRIORITIES.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+            </select>
+          </label>
+          <label className="field field--date">
+            <span className="field-label">Due date</span>
+            <input
+              className={`due-date-input ${newTodoDueDate ? '' : 'due-date-input--empty'}`}
+              type="date"
+              value={newTodoDueDate}
+              onChange={(e) => setNewTodoDueDate(e.target.value)}
+              aria-label="Due date for new task"
+            />
+          </label>
           <button className="addBtn" onClick={() => addTodo(input)} aria-label="Add todo">Add</button>
         </div>
 
