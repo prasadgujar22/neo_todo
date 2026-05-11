@@ -58,15 +58,17 @@ body{
 .field--task{flex:1 1 220px}
 .field--compact{flex:0 1 128px}
 .field--date{flex:0 1 158px}
-.field-label{color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+.field-label{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1;font-family:inherit}
 .new-todo{width:100%;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);outline:none}
 .new-todo::placeholder{color:color-mix(in srgb, var(--muted) 78%, transparent)}
 .new-todo:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--focus)}
-.priority-select,.due-date-input{width:100%;height:44px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;line-height:1.2;outline:none}
+.new-todo,.priority-select,.due-date-input,.group-select,.addBtn,.clearBtn,.groupCreateBtn,.groupCancelBtn{font-family:inherit;font-size:14px}
+.priority-select,.due-date-input{width:100%;height:44px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;line-height:1.2;outline:none;box-sizing:border-box;max-width:100%}
 .group-select,.priority-select{text-transform:capitalize}
-.due-date-input{text-align:left}
+.due-date-input{text-align:left;appearance:none;-webkit-appearance:none}
 .due-date-input::-webkit-date-and-time-value{text-align:left;min-height:20px;line-height:20px}
-.due-date-input::-webkit-calendar-picker-indicator{opacity:.75;cursor:pointer}
+.due-date-input::-webkit-calendar-picker-indicator{opacity:.75;cursor:pointer;flex-shrink:0}
+.due-date-input::-webkit-datetime-edit{padding:0;flex:1;min-width:0}
 .priority-select:focus,.due-date-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus)}
 .addBtn{height:44px;padding:12px 18px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 10px 24px color-mix(in srgb, var(--accent) 24%, transparent)}
 .addBtn:hover{background:var(--accent-strong);transform:translateY(-1px)}
@@ -148,12 +150,13 @@ body{
 .undoBar button:hover{background:color-mix(in srgb, var(--accent) 12%, transparent)}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (max-width: 600px){
-  .neo-todo-root{padding:24px 12px}
-  .card{width:100%;padding:16px}
-  .inputRow{display:flex;flex-direction:column;align-items:stretch;gap:10px}
-  .field,.field--task,.field--compact,.field--date{width:100%}
-  .group-select,.priority-select,.due-date-input{max-width:none;width:100%}
-  .addBtn{width:100%}
+  .neo-todo-root{padding:16px 10px}
+  .card{width:100%;padding:14px 12px;overflow:hidden}
+  .inputRow{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-bottom:10px}
+  /* flex:0 0 auto prevents fields from growing vertically in column layout */
+  .field,.field--task,.field--compact,.field--date{width:100%;flex:0 0 auto;min-width:0}
+  .group-select,.priority-select,.due-date-input{max-width:100%;width:100%;box-sizing:border-box}
+  .addBtn{width:100%;font-size:15px;height:46px}
   .stats{flex-wrap:wrap;gap:8px 12px}
   .footerBar{flex-direction:column;align-items:stretch}
   .clearBtn{width:100%}
