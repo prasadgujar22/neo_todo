@@ -41,7 +41,12 @@ function getInitialState() {
 function EmptyState() {
   return (
     <div className="empty" aria-live="polite">
-      <div className="empty-icon">✨</div>
+      <div className="empty-icon">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <circle cx="24" cy="24" r="19" stroke="currentColor" strokeWidth="2" strokeOpacity=".25"/>
+          <path d="M16 24h16M24 16v16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity=".35"/>
+        </svg>
+      </div>
       <div className="empty-text">No todos yet. Add your first task to get started.</div>
     </div>
   )
