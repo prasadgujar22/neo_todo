@@ -372,6 +372,7 @@ export default function App() {
           <ShareButton todos={todos} groups={groups} />
         </div>
       </section>
+      <footer className="app-version">v{__APP_VERSION__}</footer>
     </div>
   )
 }
