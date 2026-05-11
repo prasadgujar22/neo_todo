@@ -52,8 +52,9 @@ function DragGhost({ todo }) {
   return (
     <li className={`todo-item drag-overlay priority-${todo.priority} ${todo.completed ? 'completed' : ''}`}>
       <span className="drag-handle" aria-hidden="true">⠿</span>
-      <span className="toggle" aria-hidden="true">{todo.completed ? '✔' : ''}</span>
+      <span className="toggle" style={{display:'grid',placeItems:'center'}} aria-hidden="true">{todo.completed ? '✔' : ''}</span>
       <span className="text">{todo.text}</span>
+      <span style={{width:31}} />
     </li>
   )
 }

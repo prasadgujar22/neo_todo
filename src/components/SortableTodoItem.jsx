@@ -101,7 +101,9 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
         className="delete"
         onClick={() => onDelete(todo.id)}
       >
-        🗑
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+          <path d="M5.5 1h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1ZM2 3.5a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H12v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4H2.5a.5.5 0 0 1-.5-.5ZM4 4v8h7V4H4Zm2 1.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Z" fill="currentColor"/>
+        </svg>
       </button>
     </li>
   )
