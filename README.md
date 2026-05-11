@@ -4,31 +4,35 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.1.0
+**Current release:** v0.2.0
 
 ## Features
 
 - Add todos with the **Add** button or by pressing **Enter**
 - Mark tasks complete/incomplete from the checkbox-style control or task text
-- Delete individual todos
-- Clear all completed todos in one click
+- Edit todo text inline
+- Add due dates and low/medium/high priority labels
+- Delete individual todos with undo support
+- Clear all completed todos in one click with undo support
 - Inline empty state when there are no tasks or groups
 - Stats bar for total, active, and completed tasks
 - Today's formatted date displayed in the header
 - Create custom task groups with **+ New Group**
+- Rename or delete groups; deleted-group tasks move back to **Ungrouped**
 - Assign new tasks directly to a selected group from the add-task row
 - View tasks in collapsible group sections with animated chevrons
 - Keep unassigned tasks in the built-in **Ungrouped** section
-- Delete a group while keeping its tasks; deleted-group tasks move back to **Ungrouped**
 - Drag and drop tasks to reorder within a group
 - Drag and drop tasks between groups, including the **Ungrouped** section
-- Pointer and touch drag support via `@dnd-kit`
+- Pointer, touch, and keyboard drag support via `@dnd-kit`
 - Ghost preview while dragging and visual drop feedback on group sections
 - Persist todos to `localStorage` under `neo_todo.todos`
 - Persist groups to `localStorage` under `neo_todo.groups`
-- **Share via Link** — encodes the todo list into a compressed, shortened URL through a TinyURL serverless proxy
+- **Share via Link** — encodes todos and groups into a compressed, shortened URL through a TinyURL serverless proxy
   - Uses `lz-string` compression in the URL hash so shared todo state does not hit the server
-  - Uses the Web Share API when available and falls back to clipboard copy
+  - Uses the Web Share API when available and falls back to clipboard copy or a manual-copy URL field
+  - Falls back to the full compressed URL if TinyURL is unavailable
+- Installable/offline-capable PWA via `vite-plugin-pwa`
 - Accessible labels and keyboard-friendly controls
 - Minimal UI dependencies — no component library
 - Responsive UI with a clean, contemporary look
@@ -51,37 +55,44 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
 - `@dnd-kit/core`, `@dnd-kit/sortable`, and `@dnd-kit/utilities` for drag-and-drop sorting and cross-group moves
 - `lz-string` for compact share-link payloads
 - Vercel serverless function for TinyURL shortening
+- `vite-plugin-pwa` for installable/offline support
 - CSS custom properties for responsive light/dark theming
 - Node's built-in test runner for utility tests
 - ESLint for code quality
+- GitHub Actions for CI
 - Vercel for hosting
 
 ## Architecture
 
 ```text
+.github/workflows/
+  ci.yml                      # GitHub Actions: test, lint, build
 api/
-  shorten.js                 # Vercel serverless TinyURL proxy
+  shorten.js                  # Vercel serverless TinyURL proxy with URL allow-listing
 src/
-  App.jsx                    # Main todo/group state, persistence, sharing, and drag/drop orchestration
-  dateFormatter.js           # Formats the header day/date label
+  App.jsx                     # Main todo/group state, persistence, sharing, and drag/drop orchestration
+  dateFormatter.js            # Formats the header day/date label
   components/
-    GroupSection.jsx         # Droppable, collapsible group sections
-    ShareButton.jsx          # Share-link creation, Web Share API, and clipboard fallback
-    SortableTodoItem.jsx     # Draggable/sortable todo row powered by @dnd-kit
-    Stats.jsx                # Total / active / completed counters
-    TodoItem.jsx             # Non-sortable todo row component retained in the codebase
-    TodoList.jsx             # Todo list renderer retained in the codebase
+    GroupSection.jsx          # Droppable, collapsible/renamable group sections
+    ShareButton.jsx           # Share-link creation, Web Share API, clipboard, and manual fallback
+    SortableTodoItem.jsx      # Draggable/sortable editable todo row powered by @dnd-kit
+    Stats.jsx                 # Total / active / completed counters
   utils/
-    shareUrl.js              # Encode/decode todo state to/from URL hash
+    shareUrl.js               # Encode/decode todo+group state to/from URL hash
+    storage.js                # Safe localStorage read/write helpers
+    todoState.js              # State validation, normalization, and ID helpers
 tests/
-  dateFormatter.test.js      # Date-formatting coverage
+  dateFormatter.test.js       # Date-formatting coverage
+  shareUrl.test.js            # Share payload coverage
+  shorten.test.js             # Shortener API validation coverage
+  todoState.test.js           # State normalizer coverage
 ```
 
 ## Getting started
 
 Prerequisites:
 
-- Node.js
+- Node.js 24+
 - npm
 
 Install dependencies:
@@ -120,6 +131,17 @@ Preview the production build locally:
 npm run preview
 ```
 
+## CI
+
+GitHub Actions runs on pushes and pull requests to `main`:
+
+```bash
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
 ## Deployment
 
 Neo To-Do is hosted on Vercel:
@@ -140,3 +162,4 @@ The `api/shorten.js` serverless function is deployed automatically by Vercel alo
 - Todos and groups are saved only in the current browser/profile through `localStorage`.
 - The date header uses `Intl.DateTimeFormat`, so output follows the user's runtime locale by default.
 - The share URL API (`/api/shorten`) requires Vercel or another compatible serverless environment.
+- The shortener endpoint only accepts app share URLs to avoid becoming a public open-shortener proxy.

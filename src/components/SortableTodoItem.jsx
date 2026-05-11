@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-export default function SortableTodoItem({ todo, onToggle, onDelete }) {
+const PRIORITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High' }
+
+export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [draft, setDraft] = useState(todo.text)
   const {
     attributes,
     listeners,
@@ -16,8 +21,17 @@ export default function SortableTodoItem({ todo, onToggle, onDelete }) {
     transition,
   }
 
+  const saveEdit = () => {
+    const text = draft.trim()
+    if (text && text !== todo.text) onUpdate(todo.id, { text })
+    setDraft(text || todo.text)
+    setIsEditing(false)
+  }
+
   const handleTextKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (isEditing && e.key === 'Enter') saveEdit()
+    if (isEditing && e.key === 'Escape') { setDraft(todo.text); setIsEditing(false) }
+    if (!isEditing && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault()
       onToggle(todo.id)
     }
@@ -27,15 +41,13 @@ export default function SortableTodoItem({ todo, onToggle, onDelete }) {
     <li
       ref={setNodeRef}
       style={style}
-      className={`todo-item ${todo.completed ? 'completed' : ''} ${isDragging ? 'is-dragging' : ''}`}
+      className={`todo-item priority-${todo.priority} ${todo.completed ? 'completed' : ''} ${isDragging ? 'is-dragging' : ''}`}
     >
-      {/* Drag handle */}
       <button
         className="drag-handle"
         {...attributes}
         {...listeners}
-        aria-label="Drag to reorder"
-        tabIndex={-1}
+        aria-label={`Drag ${todo.text} to reorder`}
       >
         ⠿
       </button>
@@ -48,17 +60,42 @@ export default function SortableTodoItem({ todo, onToggle, onDelete }) {
         <span aria-hidden="true">{todo.completed ? '✔' : ''}</span>
       </button>
 
-      <span
-        className="text"
-        onClick={() => onToggle(todo.id)}
-        onKeyDown={handleTextKeyDown}
-        role="button"
-        aria-label={`Toggle ${todo.text}`}
-        tabIndex={0}
-      >
-        {todo.text}
-      </span>
+      <div className="todo-main">
+        {isEditing ? (
+          <input
+            className="todo-edit-input"
+            value={draft}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={saveEdit}
+            onKeyDown={handleTextKeyDown}
+            aria-label={`Edit ${todo.text}`}
+          />
+        ) : (
+          <span
+            className="text"
+            onClick={() => onToggle(todo.id)}
+            onKeyDown={handleTextKeyDown}
+            role="button"
+            aria-label={`Toggle ${todo.text}`}
+            tabIndex={0}
+          >
+            {todo.text}
+          </span>
+        )}
+        <span className="todo-meta">
+          <span className={`priority-badge priority-badge-${todo.priority}`}>{PRIORITY_LABELS[todo.priority]}</span>
+          {todo.dueDate && <time dateTime={todo.dueDate}>Due {todo.dueDate}</time>}
+        </span>
+      </div>
 
+      <button
+        className="edit"
+        onClick={() => { setDraft(todo.text); setIsEditing(true) }}
+        aria-label={`Edit ${todo.text}`}
+      >
+        ✎
+      </button>
       <button
         aria-label={`Delete ${todo.text}`}
         className="delete"
