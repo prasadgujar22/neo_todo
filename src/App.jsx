@@ -23,6 +23,16 @@ const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
 const PRIORITIES = ['low', 'medium', 'high']
 
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
+function sortTodos(list) {
+  return [...list].sort((a, b) => {
+    const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
+    const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
+    if (aDate !== bDate) return aDate - bDate
+    return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3)
+  })
+}
+
 function getInitialState() {
   const shared = getSharedTodoState()
   if (shared) {
@@ -209,7 +219,7 @@ export default function App() {
   const active = todos.filter((t) => !t.completed).length
   const completed = total - active
   const sortedGroups = groups
-  const ungroupedTodos = useMemo(() => todos.filter((t) => t.groupId == null), [todos])
+  const ungroupedTodos = useMemo(() => sortTodos(todos.filter((t) => t.groupId == null)), [todos])
   const todayLabel = useMemo(() => formatDayAndDate(), [])
   const activeTodo = useMemo(() => todos.find((t) => t.id === activeId), [todos, activeId])
   const hasContent = total > 0 || groups.length > 0
@@ -321,7 +331,7 @@ export default function App() {
                 <GroupSection
                   key={group.id}
                   group={group}
-                  todos={todos.filter((t) => t.groupId === group.id)}
+                  todos={sortTodos(todos.filter((t) => t.groupId === group.id))}
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
                   onUpdate={updateTodo}
