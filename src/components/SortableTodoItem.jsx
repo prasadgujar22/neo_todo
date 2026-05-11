@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-const PRIORITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High' }
+const PRIORITY_CYCLE = [undefined, 'low', 'medium', 'high']
+const PRIORITY_LABELS = { low: 'Low', medium: 'Med', high: 'High' }
 
 export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(todo.text)
+  const [editingDate, setEditingDate] = useState(false)
+  const dateInputRef = useRef(null)
+
   const {
     attributes,
     listeners,
@@ -37,11 +41,34 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     }
   }
 
+  const cyclePriority = (e) => {
+    e.stopPropagation()
+    const cur = PRIORITY_CYCLE.indexOf(todo.priority)
+    const next = PRIORITY_CYCLE[(cur + 1) % PRIORITY_CYCLE.length]
+    onUpdate(todo.id, { priority: next })
+  }
+
+  const handleDateChange = (e) => {
+    onUpdate(todo.id, { dueDate: e.target.value || undefined })
+    setEditingDate(false)
+  }
+
+  const handleDateBlur = () => {
+    setEditingDate(false)
+  }
+
+  const openDateEdit = (e) => {
+    e.stopPropagation()
+    setEditingDate(true)
+    // Focus the input on next tick after render
+    setTimeout(() => dateInputRef.current?.showPicker?.(), 50)
+  }
+
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className={`todo-item priority-${todo.priority} ${todo.completed ? 'completed' : ''} ${isDragging ? 'is-dragging' : ''}`}
+      className={`todo-item priority-${todo.priority ?? 'none'} ${todo.completed ? 'completed' : ''} ${isDragging ? 'is-dragging' : ''}`}
     >
       <button
         className="drag-handle"
@@ -84,8 +111,36 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
           </span>
         )}
         <span className="todo-meta">
-          <span className={`priority-badge priority-badge-${todo.priority}`}>{PRIORITY_LABELS[todo.priority]}</span>
-          {todo.dueDate && <time dateTime={todo.dueDate}>Due {todo.dueDate}</time>}
+          <button
+            className={`priority-badge priority-badge-${todo.priority ?? 'none'} priority-badge--btn`}
+            onClick={cyclePriority}
+            aria-label={`Priority: ${todo.priority ?? 'none'}, click to change`}
+            title="Click to change priority"
+          >
+            {todo.priority ? PRIORITY_LABELS[todo.priority] : '+ priority'}
+          </button>
+
+          {editingDate ? (
+            <input
+              ref={dateInputRef}
+              type="date"
+              className="due-date-input due-date-input--inline"
+              defaultValue={todo.dueDate ?? ''}
+              onChange={handleDateChange}
+              onBlur={handleDateBlur}
+              autoFocus
+              aria-label="Edit due date"
+            />
+          ) : (
+            <button
+              className="due-date-btn"
+              onClick={openDateEdit}
+              aria-label={todo.dueDate ? `Due ${todo.dueDate}, click to edit` : 'Set due date'}
+              title="Click to edit due date"
+            >
+              {todo.dueDate ? `📅 ${todo.dueDate}` : '+ due date'}
+            </button>
+          )}
         </span>
       </div>
 
