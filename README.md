@@ -4,7 +4,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.2.0
+**Current release:** v0.2.2
 
 ## Features
 
@@ -83,6 +83,7 @@ src/
     todoState.js              # State validation, normalization, and ID helpers
 tests/
   dateFormatter.test.js       # Date-formatting coverage
+  dateInput.test.js           # Date input value helper coverage
   shareUrl.test.js            # Share payload coverage
   shorten.test.js             # Shortener API validation coverage
   todoState.test.js           # State normalizer coverage
