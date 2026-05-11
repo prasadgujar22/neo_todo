@@ -17,6 +17,7 @@ import { formatDayAndDate } from './dateFormatter.js'
 import { getSharedTodoState } from './utils/shareUrl.js'
 import { makeId, normalizeGroups, normalizeTodos } from './utils/todoState.js'
 import { readJsonStorage, useLocalStorageState, writeJsonStorage } from './utils/storage.js'
+import { getDateInputValue } from './utils/dateInput.js'
 
 const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
@@ -63,7 +64,7 @@ export default function App() {
   const [groups, setGroups] = useLocalStorageState(GROUPS_KEY, () => initialState.groups)
   const [input, setInput] = useState('')
   const [selectedGroupId, setSelectedGroupId] = useState('')
-  const [newTodoDueDate, setNewTodoDueDate] = useState('')
+  const [newTodoDueDate, setNewTodoDueDate] = useState(() => getDateInputValue())
   const [newTodoPriority, setNewTodoPriority] = useState('medium')
   const [newGroupInput, setNewGroupInput] = useState('')
   const [showGroupInput, setShowGroupInput] = useState(false)
@@ -261,7 +262,7 @@ export default function App() {
           <label className="field field--date">
             <span className="field-label">Due date</span>
             <input
-              className={`due-date-input ${newTodoDueDate ? '' : 'due-date-input--empty'}`}
+              className="due-date-input"
               type="date"
               value={newTodoDueDate}
               onChange={(e) => setNewTodoDueDate(e.target.value)}
