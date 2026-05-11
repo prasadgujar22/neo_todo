@@ -3,14 +3,23 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import SortableTodoItem from './SortableTodoItem.jsx'
 
-export default function GroupSection({ group, todos, onToggle, onDelete, onDeleteGroup, isUngrouped }) {
+export default function GroupSection({ group, todos, onToggle, onDelete, onUpdate, onDeleteGroup, onRenameGroup, isUngrouped }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [draftTitle, setDraftTitle] = useState(group?.title ?? '')
 
   const containerId = isUngrouped ? 'ungrouped' : String(group.id)
   const { setNodeRef, isOver } = useDroppable({ id: containerId })
 
   const title = isUngrouped ? 'Ungrouped' : group.title
   const icon  = isUngrouped ? '📋' : '📁'
+
+  const saveRename = () => {
+    const title = draftTitle.trim()
+    if (title && !isUngrouped) onRenameGroup(group.id, title)
+    setDraftTitle(title || group?.title || '')
+    setIsRenaming(false)
+  }
 
   return (
     <div
@@ -22,7 +31,6 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onDelet
       ].filter(Boolean).join(' ')}
     >
       <div className={`group-header${isUngrouped ? ' group-header--ungrouped' : ''}`}>
-        {/* Collapse toggle */}
         <button
           className="group-collapse-btn"
           onClick={() => setCollapsed((c) => !c)}
@@ -33,8 +41,34 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onDelet
         </button>
 
         <span className="group-title-icon">{icon}</span>
-        <h2 className="group-title">{title}</h2>
+        {isRenaming ? (
+          <input
+            className="group-title-input"
+            value={draftTitle}
+            autoFocus
+            onChange={(e) => setDraftTitle(e.target.value)}
+            onBlur={saveRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveRename()
+              if (e.key === 'Escape') { setDraftTitle(group.title); setIsRenaming(false) }
+            }}
+            aria-label={`Rename ${title}`}
+          />
+        ) : (
+          <h2 className="group-title">{title}</h2>
+        )}
         <span className="group-count">{todos.length}</span>
+
+        {!isUngrouped && !isRenaming && (
+          <button
+            className="group-edit-btn"
+            onClick={() => { setDraftTitle(group.title); setIsRenaming(true) }}
+            aria-label={`Rename group ${title}`}
+            title="Rename group"
+          >
+            ✎
+          </button>
+        )}
 
         {!isUngrouped && (
           <button
@@ -60,6 +94,7 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onDelet
                 todo={t}
                 onToggle={onToggle}
                 onDelete={onDelete}
+                onUpdate={onUpdate}
               />
             ))}
             {todos.length === 0 && (

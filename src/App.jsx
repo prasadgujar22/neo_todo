@@ -4,42 +4,37 @@ import {
   DragOverlay,
   PointerSensor,
   TouchSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   closestCorners,
 } from '@dnd-kit/core'
-import { arrayMove } from '@dnd-kit/sortable'
+import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable'
 import Stats from './components/Stats.jsx'
 import GroupSection from './components/GroupSection.jsx'
 import ShareButton from './components/ShareButton.jsx'
 import { formatDayAndDate } from './dateFormatter.js'
-import { getSharedTodos } from './utils/shareUrl.js'
+import { getSharedTodoState } from './utils/shareUrl.js'
+import { makeId, normalizeGroups, normalizeTodos } from './utils/todoState.js'
+import { readJsonStorage, useLocalStorageState, writeJsonStorage } from './utils/storage.js'
 
 const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
+const PRIORITIES = ['low', 'medium', 'high']
 
-function getInitialTodos() {
-  const shared = getSharedTodos()
+function getInitialState() {
+  const shared = getSharedTodoState()
   if (shared) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(shared))
+    writeJsonStorage(STORAGE_KEY, shared.todos)
+    writeJsonStorage(GROUPS_KEY, shared.groups)
     history.replaceState(null, '', window.location.pathname + window.location.search)
     return shared
   }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch { return [] }
-}
 
-function getInitialGroups() {
-  try {
-    const raw = localStorage.getItem(GROUPS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch { return [] }
+  return {
+    todos: normalizeTodos(readJsonStorage(STORAGE_KEY, [])),
+    groups: normalizeGroups(readJsonStorage(GROUPS_KEY, [])),
+  }
 }
 
 function EmptyState() {
@@ -51,11 +46,10 @@ function EmptyState() {
   )
 }
 
-// Ghost card shown under the cursor while dragging
 function DragGhost({ todo }) {
   if (!todo) return null
   return (
-    <li className={`todo-item drag-overlay ${todo.completed ? 'completed' : ''}`}>
+    <li className={`todo-item drag-overlay priority-${todo.priority} ${todo.completed ? 'completed' : ''}`}>
       <span className="drag-handle" aria-hidden="true">⠿</span>
       <span className="toggle" aria-hidden="true">{todo.completed ? '✔' : ''}</span>
       <span className="text">{todo.text}</span>
@@ -64,147 +58,156 @@ function DragGhost({ todo }) {
 }
 
 export default function App() {
-  const [todos, setTodosState] = useState(getInitialTodos)
-  const [groups, setGroupsState] = useState(getInitialGroups)
+  const initialState = useMemo(() => getInitialState(), [])
+  const [todos, setTodos] = useLocalStorageState(STORAGE_KEY, () => initialState.todos)
+  const [groups, setGroups] = useLocalStorageState(GROUPS_KEY, () => initialState.groups)
   const [input, setInput] = useState('')
   const [selectedGroupId, setSelectedGroupId] = useState('')
+  const [newTodoDueDate, setNewTodoDueDate] = useState('')
+  const [newTodoPriority, setNewTodoPriority] = useState('medium')
   const [newGroupInput, setNewGroupInput] = useState('')
   const [showGroupInput, setShowGroupInput] = useState(false)
   const [activeId, setActiveId] = useState(null)
+  const [undo, setUndo] = useState(null)
 
-  // dnd sensors — require a 5px move before activating so clicks still work
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 150, tolerance: 5 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  // Persisted setters
-  const setTodos = (updater) => {
-    setTodosState((current) => {
-      const next = typeof updater === 'function' ? updater(current) : updater
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      return next
-    })
+  const withUndo = (message, action) => {
+    setUndo({ message, todos, groups })
+    action()
   }
 
-  const setGroups = (updater) => {
-    setGroupsState((current) => {
-      const next = typeof updater === 'function' ? updater(current) : updater
-      localStorage.setItem(GROUPS_KEY, JSON.stringify(next))
-      return next
-    })
+  const restoreUndo = () => {
+    if (!undo) return
+    setTodos(undo.todos)
+    setGroups(undo.groups)
+    setUndo(null)
   }
 
-  // ── Todo actions ─────────────────────────────────────────────────────────
   const addTodo = (text) => {
     const trimmed = text?.trim()
     if (!trimmed) return
     setTodos((t) => [{
-      id: Date.now(),
+      id: makeId(),
       text: trimmed,
       completed: false,
       createdAt: new Date().toISOString(),
-      groupId: selectedGroupId ? Number(selectedGroupId) : null,
+      groupId: selectedGroupId || null,
+      dueDate: newTodoDueDate,
+      priority: newTodoPriority,
     }, ...t])
     setInput('')
   }
 
+  const updateTodo = (id, patch) =>
+    setTodos((list) => list.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+
   const toggleTodo = (id) =>
     setTodos((list) => list.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)))
 
-  const deleteTodo = (id) =>
+  const deleteTodo = (id) => withUndo('Task deleted', () =>
     setTodos((list) => list.filter((t) => t.id !== id))
+  )
 
-  const clearCompleted = () =>
+  const clearCompleted = () => withUndo('Completed tasks cleared', () =>
     setTodos((list) => list.filter((t) => !t.completed))
+  )
 
-  // ── Group actions ─────────────────────────────────────────────────────────
   const createGroup = (title) => {
     const trimmed = title?.trim()
     if (!trimmed) return
-    const group = { id: Date.now(), title: trimmed, createdAt: new Date().toISOString() }
+    const group = { id: makeId(), title: trimmed, createdAt: new Date().toISOString() }
     setGroups((g) => [...g, group])
     setNewGroupInput('')
     setShowGroupInput(false)
-    setSelectedGroupId(String(group.id))
+    setSelectedGroupId(group.id)
   }
+
+  const renameGroup = (groupId, title) =>
+    setGroups((g) => g.map((grp) => (grp.id === groupId ? { ...grp, title } : grp)))
 
   const deleteGroup = (groupId) => {
-    setTodos((list) => list.map((t) => (t.groupId === groupId ? { ...t, groupId: null } : t)))
-    setGroups((g) => g.filter((grp) => grp.id !== groupId))
-    if (String(selectedGroupId) === String(groupId)) setSelectedGroupId('')
+    const group = groups.find((g) => g.id === groupId)
+    const confirmed = window.confirm(`Delete group "${group?.title ?? 'Untitled'}"? Tasks will move to Ungrouped.`)
+    if (!confirmed) return
+    withUndo('Group deleted', () => {
+      setTodos((list) => list.map((t) => (t.groupId === groupId ? { ...t, groupId: null } : t)))
+      setGroups((g) => g.filter((grp) => grp.id !== groupId))
+      if (selectedGroupId === groupId) setSelectedGroupId('')
+    })
   }
 
-  // ── Drag-and-drop helpers ─────────────────────────────────────────────────
-
-  /** Map any id (todo id OR container id) → container key ('ungrouped' | 'NNN') */
   const getContainer = (id, todoList) => {
-    const todo = todoList.find((t) => t.id === id)
-    if (todo) return todo.groupId != null ? String(todo.groupId) : 'ungrouped'
-    if (id === 'ungrouped') return 'ungrouped'
-    if (groups.find((g) => String(g.id) === String(id))) return String(id)
+    const itemId = String(id)
+    const todo = todoList.find((t) => t.id === itemId)
+    if (todo) return todo.groupId ?? 'ungrouped'
+    if (itemId === 'ungrouped') return 'ungrouped'
+    if (groups.find((g) => g.id === itemId)) return itemId
     return null
   }
 
-  const handleDragStart = ({ active }) => setActiveId(active.id)
+  const handleDragStart = ({ active }) => setActiveId(String(active.id))
 
   const handleDragOver = ({ active, over }) => {
     if (!over) return
     setTodos((prev) => {
-      const fromContainer = getContainer(active.id, prev)
-      const toContainer   = getContainer(over.id,   prev) ?? String(over.id)
+      const activeId = String(active.id)
+      const overId = String(over.id)
+      const fromContainer = getContainer(activeId, prev)
+      const toContainer = getContainer(overId, prev) ?? overId
       if (!fromContainer || !toContainer || fromContainer === toContainer) return prev
 
-      const newGroupId = toContainer === 'ungrouped' ? null : Number(toContainer)
-      const activeTodo = { ...prev.find((t) => t.id === active.id), groupId: newGroupId }
-      const withoutActive = prev.filter((t) => t.id !== active.id)
-      const overItemIdx = withoutActive.findIndex((t) => t.id === over.id)
+      const activeSource = prev.find((t) => t.id === activeId)
+      if (!activeSource) return prev
+
+      const activeTodo = { ...activeSource, groupId: toContainer === 'ungrouped' ? null : toContainer }
+      const withoutActive = prev.filter((t) => t.id !== activeId)
+      const overItemIdx = withoutActive.findIndex((t) => t.id === overId)
 
       if (overItemIdx !== -1) {
         const result = [...withoutActive]
         result.splice(overItemIdx, 0, activeTodo)
         return result
       }
-      // Dropping on an empty container
       return [...withoutActive, activeTodo]
     })
   }
 
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null)
-    if (!over || active.id === over.id) return
+    if (!over || String(active.id) === String(over.id)) return
 
     setTodos((prev) => {
-      const fromContainer = getContainer(active.id, prev)
-      const toContainer   = getContainer(over.id,   prev)
-      // Cross-container moves were handled in onDragOver — only handle same-container reorder here
+      const activeId = String(active.id)
+      const overId = String(over.id)
+      const fromContainer = getContainer(activeId, prev)
+      const toContainer = getContainer(overId, prev)
       if (!fromContainer || !toContainer || fromContainer !== toContainer) return prev
 
-      const containerTodos = prev.filter(
-        (t) => (t.groupId != null ? String(t.groupId) : 'ungrouped') === fromContainer
-      )
-      const otherTodos = prev.filter(
-        (t) => (t.groupId != null ? String(t.groupId) : 'ungrouped') !== fromContainer
-      )
-      const oldIndex = containerTodos.findIndex((t) => t.id === active.id)
-      const newIndex = containerTodos.findIndex((t) => t.id === over.id)
+      const containerTodos = prev.filter((t) => (t.groupId ?? 'ungrouped') === fromContainer)
+      const otherTodos = prev.filter((t) => (t.groupId ?? 'ungrouped') !== fromContainer)
+      const oldIndex = containerTodos.findIndex((t) => t.id === activeId)
+      const newIndex = containerTodos.findIndex((t) => t.id === overId)
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prev
 
       return [...otherTodos, ...arrayMove(containerTodos, oldIndex, newIndex)]
     })
   }
 
-  // ── Derived ───────────────────────────────────────────────────────────────
-  const total     = todos.length
-  const active    = todos.filter((t) => !t.completed).length
+  const total = todos.length
+  const active = todos.filter((t) => !t.completed).length
   const completed = total - active
-
+  const sortedGroups = groups
   const ungroupedTodos = useMemo(() => todos.filter((t) => t.groupId == null), [todos])
-  const todayLabel     = useMemo(() => formatDayAndDate(), [])
-  const activeTodo     = useMemo(() => todos.find((t) => t.id === activeId), [todos, activeId])
-  const hasContent     = total > 0 || groups.length > 0
+  const todayLabel = useMemo(() => formatDayAndDate(), [])
+  const activeTodo = useMemo(() => todos.find((t) => t.id === activeId), [todos, activeId])
+  const hasContent = total > 0 || groups.length > 0
 
-  const handleTodoKeyDown  = (e) => { if (e.key === 'Enter') addTodo(input) }
+  const handleTodoKeyDown = (e) => { if (e.key === 'Enter') addTodo(input) }
   const handleGroupKeyDown = (e) => { if (e.key === 'Enter') createGroup(newGroupInput) }
 
   return (
@@ -216,8 +219,7 @@ export default function App() {
       </header>
 
       <section className="card" aria-label="Todo panel">
-        {/* ── Add task row ── */}
-        <div className="inputRow">
+        <div className="inputRow inputRow--stackable">
           <input
             aria-label="New todo"
             className="new-todo"
@@ -235,14 +237,28 @@ export default function App() {
             >
               <option value="">No group</option>
               {groups.map((g) => (
-                <option key={g.id} value={String(g.id)}>{g.title}</option>
+                <option key={g.id} value={g.id}>{g.title}</option>
               ))}
             </select>
           )}
+          <select
+            className="priority-select"
+            value={newTodoPriority}
+            onChange={(e) => setNewTodoPriority(e.target.value)}
+            aria-label="Select priority for new task"
+          >
+            {PRIORITIES.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+          </select>
+          <input
+            className="due-date-input"
+            type="date"
+            value={newTodoDueDate}
+            onChange={(e) => setNewTodoDueDate(e.target.value)}
+            aria-label="Due date for new task"
+          />
           <button className="addBtn" onClick={() => addTodo(input)} aria-label="Add todo">Add</button>
         </div>
 
-        {/* ── Group creation row ── */}
         <div className="groupRow">
           {showGroupInput ? (
             <div className="groupInputRow">
@@ -263,7 +279,14 @@ export default function App() {
           )}
         </div>
 
-        {/* ── Content ── */}
+        {undo && (
+          <div className="undoBar" role="status">
+            <span>{undo.message}</span>
+            <button onClick={restoreUndo}>Undo</button>
+            <button aria-label="Dismiss undo" onClick={() => setUndo(null)}>✕</button>
+          </div>
+        )}
+
         {!hasContent ? (
           <EmptyState />
         ) : (
@@ -275,14 +298,16 @@ export default function App() {
             onDragEnd={handleDragEnd}
           >
             <div className="content">
-              {groups.map((group) => (
+              {sortedGroups.map((group) => (
                 <GroupSection
                   key={group.id}
                   group={group}
-                  todos={todos.filter((t) => String(t.groupId) === String(group.id))}
+                  todos={todos.filter((t) => t.groupId === group.id)}
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
+                  onUpdate={updateTodo}
                   onDeleteGroup={deleteGroup}
+                  onRenameGroup={renameGroup}
                 />
               ))}
 
@@ -292,11 +317,11 @@ export default function App() {
                   todos={ungroupedTodos}
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
+                  onUpdate={updateTodo}
                 />
               )}
             </div>
 
-            {/* Ghost card under cursor */}
             <DragOverlay>
               {activeTodo ? <DragGhost todo={activeTodo} /> : null}
             </DragOverlay>
@@ -315,7 +340,7 @@ export default function App() {
           </button>
         </div>
         <div className="shareRow">
-          <ShareButton todos={todos} />
+          <ShareButton todos={todos} groups={groups} />
         </div>
       </section>
     </div>
