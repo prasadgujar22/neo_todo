@@ -4,14 +4,16 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.2.2
+**Current release:** v0.2.3
 
 ## Features
 
 - Add todos with the **Add** button or by pressing **Enter**
 - Mark tasks complete/incomplete from the checkbox-style control or task text
 - Edit todo text inline
-- Add due dates and low/medium/high priority labels
+- Add due dates and low/medium/high priority labels when creating a task
+- **Click the priority badge on any task** to cycle through none → Low → Med → High inline
+- **Click the due date on any task** to edit it inline (mobile Safari safe, won't overflow)
 - Delete individual todos with undo support
 - Clear all completed todos in one click with undo support
 - Inline empty state when there are no tasks or groups
