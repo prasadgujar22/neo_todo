@@ -65,13 +65,22 @@ function EmptyState() {
 function DragGhost({ todo }) {
   if (!todo) return null
   return (
-    <li className={`todo-item drag-overlay priority-${todo.priority} ${todo.completed ? 'completed' : ''}`}>
-      <span className="drag-handle" aria-hidden="true">⠿</span>
-      <span className="toggle" style={{display:'grid',placeItems:'center'}} aria-hidden="true">{todo.completed ? '✔' : ''}</span>
-      <span className="text">{todo.text}</span>
-      <span style={{width:31}} />
-    </li>
+    <div className="drag-ghost">
+      <span className="drag-ghost-handle" aria-hidden="true">⠿</span>
+      <span className="drag-ghost-text">{todo.text}</span>
+    </div>
   )
+}
+
+function snapToCursorModifier({ transform, draggingNodeRect, activatorEvent }) {
+  if (!draggingNodeRect || !activatorEvent) return transform
+  const pX = 'clientX' in activatorEvent ? activatorEvent.clientX : (activatorEvent.touches?.[0]?.clientX ?? 0)
+  const pY = 'clientY' in activatorEvent ? activatorEvent.clientY : (activatorEvent.touches?.[0]?.clientY ?? 0)
+  return {
+    ...transform,
+    x: transform.x + pX - draggingNodeRect.left - draggingNodeRect.width / 2,
+    y: transform.y + pY - draggingNodeRect.top - draggingNodeRect.height / 2,
+  }
 }
 
 export default function App() {
@@ -355,7 +364,7 @@ export default function App() {
               )}
             </div>
 
-            <DragOverlay>
+            <DragOverlay modifiers={[snapToCursorModifier]}>
               {activeTodo ? <DragGhost todo={activeTodo} /> : null}
             </DragOverlay>
           </DndContext>
