@@ -24,11 +24,12 @@ const GROUPS_KEY = 'neo_todo.groups'
 const PRIORITIES = ['low', 'medium', 'high']
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
-function sortTodos(list) {
+function sortTodos(list, order = 'asc') {
+  const dir = order === 'desc' ? -1 : 1
   return [...list].sort((a, b) => {
-    const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
-    const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
-    if (aDate !== bDate) return aDate - bDate
+    const aDate = a.dueDate ? new Date(a.dueDate).getTime() : (order === 'desc' ? -Infinity : Infinity)
+    const bDate = b.dueDate ? new Date(b.dueDate).getTime() : (order === 'desc' ? -Infinity : Infinity)
+    if (aDate !== bDate) return dir * (aDate - bDate)
     return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3)
   })
 }
@@ -114,6 +115,7 @@ export default function App() {
   const [showGroupInput, setShowGroupInput] = useState(false)
   const [activeId, setActiveId] = useState(null)
   const [undo, setUndo] = useState(null)
+  const [sortOrder, setSortOrder] = useState('asc')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
@@ -251,7 +253,7 @@ export default function App() {
   const active = todos.filter((t) => !t.completed).length
   const completed = total - active
   const sortedGroups = groups
-  const ungroupedTodos = useMemo(() => sortTodos(todos.filter((t) => t.groupId == null)), [todos])
+  const ungroupedTodos = useMemo(() => sortTodos(todos.filter((t) => t.groupId == null), sortOrder), [todos, sortOrder])
   const todayLabel = useMemo(() => formatDayAndDate(), [])
   const activeTodo = useMemo(() => todos.find((t) => t.id === activeId), [todos, activeId])
   const hasContent = total > 0 || groups.length > 0
@@ -321,6 +323,24 @@ export default function App() {
         </div>
 
         <div className="groupRow">
+          <div className="sortRow">
+            <button
+              className={`sortBtn${sortOrder === 'asc' ? ' sortBtn--active' : ''}`}
+              onClick={() => setSortOrder('asc')}
+              aria-pressed={sortOrder === 'asc'}
+              title="Sort by earliest due date first"
+            >
+              ↑ Oldest first
+            </button>
+            <button
+              className={`sortBtn${sortOrder === 'desc' ? ' sortBtn--active' : ''}`}
+              onClick={() => setSortOrder('desc')}
+              aria-pressed={sortOrder === 'desc'}
+              title="Sort by latest due date first"
+            >
+              ↓ Latest first
+            </button>
+          </div>
           {showGroupInput ? (
             <div className="groupInputRow">
               <input
@@ -363,7 +383,7 @@ export default function App() {
                 <GroupSection
                   key={group.id}
                   group={group}
-                  todos={sortTodos(todos.filter((t) => t.groupId === group.id))}
+                  todos={sortTodos(todos.filter((t) => t.groupId === group.id), sortOrder)}
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
                   onUpdate={updateTodo}

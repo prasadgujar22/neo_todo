@@ -2,6 +2,11 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.2.6] — 2026-05-13
+
+### Added
+- **Sort order toggle** — "↑ Oldest first" / "↓ Latest first" buttons in the task list toolbar let you switch due-date sort direction globally. Tasks without a due date always sort to the bottom. Sort preference is session-only (not persisted).
+
 ## [0.2.5] — 2026-05-13
 
 ### Fixed
