@@ -2,6 +2,13 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.3.0] — 2026-05-13
+
+### Fixed
+- **Drag restored to original smooth full-row ghost** — reverted the compact pill ghost and `snapToCursorModifier` which introduced jankiness. The overlay is now the original full-width `<li>` row, which dnd-kit positions naturally using the grab offset. This feels smooth on both desktop and mobile.
+- **Desktop drag fixed** — `PointerSensor` activation distance kept at 1 px (down from original 5 px) so drag starts immediately on first movement. This was the actual root cause of the original desktop issue — the ghost now locks to the cursor from the first pixel.
+- **`user-select: none`** retained on todo items to prevent text selection during drag.
+
 ## [0.2.9] — 2026-05-13
 
 ### Fixed

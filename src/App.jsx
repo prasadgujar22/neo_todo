@@ -63,43 +63,24 @@ function EmptyState() {
 }
 
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
-const PRIORITY_LABELS_GHOST = { high: 'High', medium: 'Med', low: 'Low' }
-
-function ghostFormatDate(dueDate) {
-  if (!dueDate) return null
-  const date = new Date(dueDate)
-  if (isNaN(date.getTime())) return null
-  const datePart = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
-  if (!dueDate.includes('T')) return datePart
-  const timePart = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', hour12: true }).format(date)
-  return `${datePart} ${timePart}`
-}
 
 function DragGhost({ todo }) {
   if (!todo) return null
-  const dateLabel = ghostFormatDate(todo.dueDate)
-  const priorityColor = PRIORITY_COLORS[todo.priority]
   return (
-    <div className="drag-ghost">
-      <span className="drag-ghost-handle" aria-hidden="true">⠿</span>
-      {priorityColor && (
-        <span className="drag-ghost-priority" style={{ background: priorityColor }} aria-hidden="true" />
+    <li className={`todo-item drag-overlay priority-${todo.priority ?? 'none'} ${todo.completed ? 'completed' : ''}`}>
+      <span className="drag-handle" aria-hidden="true">⠿</span>
+      <span className="toggle" style={{display:'grid',placeItems:'center'}} aria-hidden="true">{todo.completed ? '✔' : ''}</span>
+      <span className="text">{todo.text}</span>
+      {todo.dueDate && (
+        <span className="drag-ghost-meta">
+          {PRIORITY_COLORS[todo.priority] && (
+            <span className="drag-ghost-priority" style={{ background: PRIORITY_COLORS[todo.priority] }} aria-hidden="true" />
+          )}
+        </span>
       )}
-      <span className="drag-ghost-text">{todo.text}</span>
-      {dateLabel && <span className="drag-ghost-date">📅 {dateLabel}</span>}
-    </div>
+      <span style={{width:31}} />
+    </li>
   )
-}
-
-function snapToCursorModifier({ transform, draggingNodeRect, activatorEvent }) {
-  if (!draggingNodeRect || !activatorEvent) return transform
-  const pX = 'clientX' in activatorEvent ? activatorEvent.clientX : (activatorEvent.touches?.[0]?.clientX ?? 0)
-  const pY = 'clientY' in activatorEvent ? activatorEvent.clientY : (activatorEvent.touches?.[0]?.clientY ?? 0)
-  return {
-    ...transform,
-    x: transform.x + pX - draggingNodeRect.left - draggingNodeRect.width / 2,
-    y: transform.y + pY - draggingNodeRect.top - draggingNodeRect.height / 2,
-  }
 }
 
 export default function App() {
@@ -197,7 +178,6 @@ export default function App() {
 
   const handleDragStart = ({ active }) => {
     setActiveId(String(active.id))
-    document.body.classList.add('is-dragging-active')
   }
 
   const handleDragOver = ({ active, over }) => {
@@ -227,7 +207,6 @@ export default function App() {
 
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null)
-    document.body.classList.remove('is-dragging-active')
     if (!over || String(active.id) === String(over.id)) return
 
     setTodos((prev) => {
@@ -385,7 +364,7 @@ export default function App() {
               )}
             </div>
 
-            <DragOverlay modifiers={[snapToCursorModifier]}>
+            <DragOverlay>
               {activeTodo ? <DragGhost todo={activeTodo} /> : null}
             </DragOverlay>
           </DndContext>
