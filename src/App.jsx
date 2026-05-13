@@ -62,12 +62,31 @@ function EmptyState() {
   )
 }
 
+const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
+const PRIORITY_LABELS_GHOST = { high: 'High', medium: 'Med', low: 'Low' }
+
+function ghostFormatDate(dueDate) {
+  if (!dueDate) return null
+  const date = new Date(dueDate)
+  if (isNaN(date.getTime())) return null
+  const datePart = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
+  if (!dueDate.includes('T')) return datePart
+  const timePart = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', hour12: true }).format(date)
+  return `${datePart} ${timePart}`
+}
+
 function DragGhost({ todo }) {
   if (!todo) return null
+  const dateLabel = ghostFormatDate(todo.dueDate)
+  const priorityColor = PRIORITY_COLORS[todo.priority]
   return (
     <div className="drag-ghost">
       <span className="drag-ghost-handle" aria-hidden="true">⠿</span>
+      {priorityColor && (
+        <span className="drag-ghost-priority" style={{ background: priorityColor }} aria-hidden="true" />
+      )}
       <span className="drag-ghost-text">{todo.text}</span>
+      {dateLabel && <span className="drag-ghost-date">📅 {dateLabel}</span>}
     </div>
   )
 }

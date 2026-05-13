@@ -2,6 +2,11 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.2.5] — 2026-05-13
+
+### Fixed
+- **Drag ghost now shows priority and due date** — the compact drag pill now includes a coloured priority dot (red/amber/green) and the due date+time alongside the task name, so context is visible while reordering.
+
 ## [0.2.4] — 2026-05-13
 
 ### Fixed
