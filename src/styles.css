@@ -107,7 +107,7 @@ body{
 .clearBtn:not(:disabled):hover{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb, var(--accent) 6%, transparent)}
 .clearBtn:disabled{opacity:.4;cursor:not-allowed}
 /* ── Drag & drop ── */
-.drag-handle{background:transparent;border:0;cursor:grab;color:var(--muted);font-size:18px;padding:4px 6px;border-radius:6px;line-height:1;touch-action:none;flex-shrink:0}
+.drag-handle{background:transparent;border:0;cursor:grab;color:var(--muted);font-size:18px;padding:6px 8px;border-radius:6px;line-height:1;touch-action:none;flex-shrink:0;-webkit-user-select:none;user-select:none}
 .drag-handle:active{cursor:grabbing}
 .drag-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
 .is-dragging{opacity:.35}
@@ -159,6 +159,10 @@ body{
 .undoBar button:hover{background:color-mix(in srgb, var(--accent) 12%, transparent)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .app-version{text-align:center;font-size:11px;color:var(--muted);opacity:.45;margin-top:18px;font-family:monospace;background:none;border:none}
+.todo-item{user-select:none}
+.todo-main{user-select:none}
+body.is-dragging-active{cursor:grabbing!important}
+body.is-dragging-active *{cursor:grabbing!important}
 @media (max-width: 600px){
   .neo-todo-root{padding:16px 10px}
   .card{width:100%;padding:14px 12px;overflow:hidden}

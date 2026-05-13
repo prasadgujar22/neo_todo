@@ -88,7 +88,7 @@ export default function App() {
   const [undo, setUndo] = useState(null)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
@@ -167,7 +167,10 @@ export default function App() {
     return null
   }
 
-  const handleDragStart = ({ active }) => setActiveId(String(active.id))
+  const handleDragStart = ({ active }) => {
+    setActiveId(String(active.id))
+    document.body.classList.add('is-dragging-active')
+  }
 
   const handleDragOver = ({ active, over }) => {
     if (!over) return
@@ -196,6 +199,7 @@ export default function App() {
 
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null)
+    document.body.classList.remove('is-dragging-active')
     if (!over || String(active.id) === String(over.id)) return
 
     setTodos((prev) => {
