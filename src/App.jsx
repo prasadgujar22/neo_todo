@@ -369,6 +369,7 @@ export default function App() {
                   onUpdate={updateTodo}
                   onDeleteGroup={deleteGroup}
                   onRenameGroup={renameGroup}
+                  isDragging={!!activeId}
                 />
               ))}
 
@@ -379,6 +380,7 @@ export default function App() {
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
                   onUpdate={updateTodo}
+                  isDragging={!!activeId}
                 />
               )}
             </div>

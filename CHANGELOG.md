@@ -2,6 +2,11 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.2.8] — 2026-05-13
+
+### Fixed
+- **Sort disabled during drag** — sort order is now frozen while a drag is in progress so dnd-kit's live reordering logic is not overridden by re-sorting. Sort resumes as soon as the item is dropped.
+
 ## [0.2.7] — 2026-05-13
 
 ### Changed

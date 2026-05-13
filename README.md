@@ -4,7 +4,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.2.7
+**Current release:** v0.2.8
 
 ## Features
 

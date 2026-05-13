@@ -27,7 +27,7 @@ function sortByDate(list, order) {
   })
 }
 
-export default function GroupSection({ group, todos, onToggle, onDelete, onUpdate, onDeleteGroup, onRenameGroup, isUngrouped }) {
+export default function GroupSection({ group, todos, onToggle, onDelete, onUpdate, onDeleteGroup, onRenameGroup, isUngrouped, isDragging }) {
   const [collapsed, setCollapsed] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState(group?.title ?? '')
@@ -39,7 +39,10 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
   const title = isUngrouped ? 'Ungrouped' : group.title
   const icon = isUngrouped ? <IconClipboard /> : <IconFolder />
 
-  const sortedTodos = useMemo(() => sortByDate(todos, sortOrder), [todos, sortOrder])
+  const sortedTodos = useMemo(
+    () => isDragging ? todos : sortByDate(todos, sortOrder),
+    [todos, sortOrder, isDragging]
+  )
 
   const saveRename = () => {
     const title = draftTitle.trim()
