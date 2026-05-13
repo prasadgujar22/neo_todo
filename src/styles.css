@@ -57,7 +57,7 @@ body{
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field--task{flex:1 1 220px}
 .field--compact{flex:0 1 128px}
-.field--date{flex:0 1 158px}
+.field--date{flex:0 1 200px}
 .field-label{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1;font-family:inherit}
 .new-todo{width:100%;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);outline:none}
 .new-todo::placeholder{color:color-mix(in srgb, var(--muted) 78%, transparent)}
