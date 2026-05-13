@@ -279,7 +279,7 @@ export default function App() {
             <span className="field-label">Due date</span>
             <input
               className="due-date-input"
-              type="date"
+              type="datetime-local"
               value={newTodoDueDate}
               onChange={(e) => setNewTodoDueDate(e.target.value)}
               aria-label="Due date for new task"

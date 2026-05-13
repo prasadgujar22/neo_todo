@@ -5,6 +5,22 @@ import { CSS } from '@dnd-kit/utilities'
 const PRIORITY_CYCLE = [undefined, 'low', 'medium', 'high']
 const PRIORITY_LABELS = { low: 'Low', medium: 'Med', high: 'High' }
 
+function formatDueDate(dueDate) {
+  if (!dueDate) return null
+  const hasTime = dueDate.includes('T')
+  const date = new Date(dueDate)
+  if (isNaN(date.getTime())) return dueDate
+  if (hasTime) {
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit',
+    }).format(date)
+  }
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric',
+  }).format(date)
+}
+
 export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(todo.text)
@@ -123,7 +139,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
           {editingDate ? (
             <input
               ref={dateInputRef}
-              type="date"
+              type="datetime-local"
               className="due-date-input due-date-input--inline"
               defaultValue={todo.dueDate ?? ''}
               onChange={handleDateChange}
@@ -135,10 +151,10 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
             <button
               className="due-date-btn"
               onClick={openDateEdit}
-              aria-label={todo.dueDate ? `Due ${todo.dueDate}, click to edit` : 'Set due date'}
+              aria-label={todo.dueDate ? `Due ${formatDueDate(todo.dueDate)}, click to edit` : 'Set due date'}
               title="Click to edit due date"
             >
-              {todo.dueDate ? `📅 ${todo.dueDate}` : '+ due date'}
+              {todo.dueDate ? `📅 ${formatDueDate(todo.dueDate)}` : '+ due date'}
             </button>
           )}
         </span>
