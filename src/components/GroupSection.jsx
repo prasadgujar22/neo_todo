@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import SortableTodoItem from './SortableTodoItem.jsx'
@@ -15,16 +15,31 @@ const IconClipboard = () => (
   </svg>
 )
 
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
+
+function sortByDate(list, order) {
+  const dir = order === 'desc' ? -1 : 1
+  return [...list].sort((a, b) => {
+    const aDate = a.dueDate ? new Date(a.dueDate).getTime() : (order === 'desc' ? -Infinity : Infinity)
+    const bDate = b.dueDate ? new Date(b.dueDate).getTime() : (order === 'desc' ? -Infinity : Infinity)
+    if (aDate !== bDate) return dir * (aDate - bDate)
+    return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3)
+  })
+}
+
 export default function GroupSection({ group, todos, onToggle, onDelete, onUpdate, onDeleteGroup, onRenameGroup, isUngrouped }) {
   const [collapsed, setCollapsed] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState(group?.title ?? '')
+  const [sortOrder, setSortOrder] = useState('asc')
 
   const containerId = isUngrouped ? 'ungrouped' : String(group.id)
   const { setNodeRef, isOver } = useDroppable({ id: containerId })
 
   const title = isUngrouped ? 'Ungrouped' : group.title
   const icon = isUngrouped ? <IconClipboard /> : <IconFolder />
+
+  const sortedTodos = useMemo(() => sortByDate(todos, sortOrder), [todos, sortOrder])
 
   const saveRename = () => {
     const title = draftTitle.trim()
@@ -75,6 +90,26 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
         )}
         <span className="group-count">{todos.length}</span>
 
+        {/* Sort toggle — inside the group header, right-aligned */}
+        <div className="group-sort-row">
+          <button
+            className={`sortBtn${sortOrder === 'asc' ? ' sortBtn--active' : ''}`}
+            onClick={() => setSortOrder('asc')}
+            aria-pressed={sortOrder === 'asc'}
+            title="Sort by earliest due date first"
+          >
+            ↑ Oldest
+          </button>
+          <button
+            className={`sortBtn${sortOrder === 'desc' ? ' sortBtn--active' : ''}`}
+            onClick={() => setSortOrder('desc')}
+            aria-pressed={sortOrder === 'desc'}
+            title="Sort by latest due date first"
+          >
+            ↓ Latest
+          </button>
+        </div>
+
         {!isUngrouped && !isRenaming && (
           <button
             className="group-edit-btn"
@@ -99,12 +134,12 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
       </div>
 
       {!collapsed && (
-        <SortableContext items={todos.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={sortedTodos.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           <ul
             ref={setNodeRef}
-            className={`todo-list sortable-list${todos.length === 0 ? ' sortable-list--empty' : ''}`}
+            className={`todo-list sortable-list${sortedTodos.length === 0 ? ' sortable-list--empty' : ''}`}
           >
-            {todos.map((t) => (
+            {sortedTodos.map((t) => (
               <SortableTodoItem
                 key={t.id}
                 todo={t}
@@ -113,7 +148,7 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
                 onUpdate={onUpdate}
               />
             ))}
-            {todos.length === 0 && (
+            {sortedTodos.length === 0 && (
               <li className="group-empty" aria-hidden="true">
                 Drop tasks here or add one above.
               </li>

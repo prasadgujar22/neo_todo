@@ -2,6 +2,11 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.2.7] — 2026-05-13
+
+### Changed
+- **Sort order toggle moved to group scope** — each group section (including Ungrouped) now has its own independent ↑ Oldest / ↓ Latest toggle in its header row. Groups can be sorted differently from each other.
+
 ## [0.2.6] — 2026-05-13
 
 ### Added
