@@ -92,7 +92,8 @@ body{
 .priority-badge--btn:hover{opacity:1;background:color-mix(in srgb, var(--accent) 14%, transparent)}
 .due-date-btn{background:transparent;border:0;cursor:pointer;color:var(--muted);font-size:12px;padding:1px 4px;border-radius:6px;font-family:inherit;line-height:1;transition:color .15s,background .15s}
 .due-date-btn:hover{color:var(--accent);background:color-mix(in srgb, var(--accent) 10%, transparent)}
-.due-date-input--inline{height:26px;padding:2px 6px;font-size:12px;border-radius:8px;max-width:140px;flex-shrink:1;min-width:0;width:auto}
+.due-date-input--inline{height:26px;padding:2px 6px;font-size:12px;border-radius:8px;max-width:220px;flex-shrink:1;min-width:0;width:auto}
+.due-time{display:block;font-size:11px;font-weight:600;color:var(--accent);opacity:.9;line-height:1.3;margin-top:1px}
 .todo-edit-input{width:100%;padding:6px 8px;border:1px solid var(--accent);border-radius:8px;background:var(--input);color:var(--text);outline:none}
 .todo-item .edit,.todo-item .delete{background:transparent;border:0;cursor:pointer;color:var(--muted);font-size:16px;border-radius:8px;padding:6px;flex-shrink:0;transition:color .15s,background .15s}
 .todo-item .edit:hover{background:color-mix(in srgb, var(--accent) 10%, transparent);color:var(--accent)}
