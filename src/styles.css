@@ -63,7 +63,9 @@ body{
 .new-todo::placeholder{color:color-mix(in srgb, var(--muted) 78%, transparent)}
 .new-todo:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--focus)}
 .new-todo,.priority-select,.due-date-input,.group-select,.addBtn,.clearBtn,.groupCreateBtn,.groupCancelBtn{font-family:inherit;font-size:14px}
-.priority-select,.due-date-input{width:100%;height:44px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;line-height:1.2;outline:none;box-sizing:border-box;max-width:100%}
+.priority-select,.due-date-input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;line-height:1.2;outline:none;box-sizing:border-box;max-width:100%}
+.due-date-input{height:44px}
+.priority-select{min-height:44px;height:auto}
 .group-select,.priority-select{text-transform:capitalize}
 .due-date-input{text-align:left;appearance:none}
 .due-date-input::-webkit-date-and-time-value{text-align:left;min-height:20px;line-height:20px}
@@ -124,7 +126,7 @@ body{
 .groupCreateBtn:hover{background:var(--accent-strong)}
 .groupCancelBtn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;white-space:nowrap}
 .groupCancelBtn:hover{border-color:var(--delete);color:var(--delete)}
-.group-select{width:100%;height:44px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;line-height:1.2;cursor:pointer;outline:none}
+.group-select{width:100%;min-height:44px;height:auto;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;line-height:1.2;cursor:pointer;outline:none}
 .group-select:focus{border-color:var(--accent)}
 .group-section{margin-bottom:16px;border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .15s}
 .group-section--over{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus)}
