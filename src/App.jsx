@@ -251,7 +251,7 @@ export default function App() {
   const active = todos.filter((t) => !t.completed).length
   const completed = total - active
   const sortedGroups = groups
-  const ungroupedTodos = useMemo(() => sortTodos(todos.filter((t) => t.groupId == null)), [todos])
+  const ungroupedTodos = useMemo(() => todos.filter((t) => t.groupId == null), [todos])
   const todayLabel = useMemo(() => formatDayAndDate(), [])
   const activeTodo = useMemo(() => todos.find((t) => t.id === activeId), [todos, activeId])
   const hasContent = total > 0 || groups.length > 0
@@ -363,7 +363,7 @@ export default function App() {
                 <GroupSection
                   key={group.id}
                   group={group}
-                  todos={sortTodos(todos.filter((t) => t.groupId === group.id))}
+                  todos={todos.filter((t) => t.groupId === group.id)}
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
                   onUpdate={updateTodo}

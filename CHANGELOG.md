@@ -2,6 +2,11 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.2.9] — 2026-05-13
+
+### Fixed
+- **Sort properly disabled during drag** — removed `sortTodos()` from App.jsx so pre-sorted todos are no longer passed to GroupSection (which was overriding dnd-kit's live reordering at the source). Sort state in GroupSection resets to `null` (deselected) the moment a drag starts via `useEffect`. Sort buttons visually deselect during drag and re-enable after drop. Clicking an already-active sort button now also toggles it off.
+
 ## [0.2.8] — 2026-05-13
 
 ### Fixed

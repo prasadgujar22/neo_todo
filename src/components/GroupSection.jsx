@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import SortableTodoItem from './SortableTodoItem.jsx'
@@ -31,7 +31,12 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
   const [collapsed, setCollapsed] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState(group?.title ?? '')
-  const [sortOrder, setSortOrder] = useState('asc')
+  const [sortOrder, setSortOrder] = useState(null) // null = no sort (natural/drag order)
+
+  // Clear sort when drag starts so dnd-kit's live reordering isn't overridden
+  useEffect(() => {
+    if (isDragging) setSortOrder(null)
+  }, [isDragging])
 
   const containerId = isUngrouped ? 'ungrouped' : String(group.id)
   const { setNodeRef, isOver } = useDroppable({ id: containerId })
@@ -40,8 +45,8 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
   const icon = isUngrouped ? <IconClipboard /> : <IconFolder />
 
   const sortedTodos = useMemo(
-    () => isDragging ? todos : sortByDate(todos, sortOrder),
-    [todos, sortOrder, isDragging]
+    () => sortOrder ? sortByDate(todos, sortOrder) : todos,
+    [todos, sortOrder]
   )
 
   const saveRename = () => {
@@ -97,7 +102,7 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
         <div className="group-sort-row">
           <button
             className={`sortBtn${sortOrder === 'asc' ? ' sortBtn--active' : ''}`}
-            onClick={() => setSortOrder('asc')}
+            onClick={() => setSortOrder(sortOrder === 'asc' ? null : 'asc')}
             aria-pressed={sortOrder === 'asc'}
             title="Sort by earliest due date first"
           >
@@ -105,7 +110,7 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
           </button>
           <button
             className={`sortBtn${sortOrder === 'desc' ? ' sortBtn--active' : ''}`}
-            onClick={() => setSortOrder('desc')}
+            onClick={() => setSortOrder(sortOrder === 'desc' ? null : 'desc')}
             aria-pressed={sortOrder === 'desc'}
             title="Sort by latest due date first"
           >
