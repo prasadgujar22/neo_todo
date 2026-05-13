@@ -19,7 +19,7 @@ function formatDueTimePart(dueDate) {
   const date = new Date(dueDate)
   if (isNaN(date.getTime())) return null
   return new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric', minute: '2-digit',
+    hour: 'numeric', minute: '2-digit', hour12: true,
   }).format(date)
 }
 
