@@ -78,8 +78,16 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
   const openDateEdit = (e) => {
     e.stopPropagation()
     setEditingDate(true)
-    // Focus the input on next tick after render
-    setTimeout(() => dateInputRef.current?.showPicker?.(), 50)
+    // showPicker() is Chrome/Firefox only; Safari needs .click() fallback
+    setTimeout(() => {
+      const el = dateInputRef.current
+      if (!el) return
+      if (typeof el.showPicker === 'function') {
+        try { el.showPicker() } catch { el.click() }
+      } else {
+        el.click()
+      }
+    }, 50)
   }
 
   return (
