@@ -2,6 +2,14 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.3.1] — 2026-05-19
+
+### Added
+- **Swipe-to-delete on mobile** — on touch devices, swipe a todo item left to reveal a red delete zone with a trash icon. Release past 40% of the item width to confirm deletion; partial swipes snap back smoothly. The existing desktop delete button is unaffected.
+- **No-library gesture detection** — implemented with `useRef` + native `onTouchStart` / `onTouchMove` / `onTouchEnd` handlers; zero new dependencies.
+- **dnd-kit compatibility preserved** — `touch-action: pan-y` on the swipe layer keeps vertical drag-to-reorder fully functional; `pointer-events: none` is applied to the dnd drag handle while a horizontal swipe is in progress.
+- **New CSS classes** — `.swipe-container`, `.swipe-delete-bg`, `.swipe-delete-icon`, `.swipe-content` added to `src/styles.css`.
+
 ## [0.3.0] — 2026-05-13
 
 ### Fixed
