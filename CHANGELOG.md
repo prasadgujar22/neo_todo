@@ -2,6 +2,12 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.3.2] — 2026-05-19
+
+### Fixed
+- **Removed dark fill on task rows** — stripped both `background: inherit` and `background: var(--card, #fff)` declarations from `.swipe-content` so the row is fully transparent and inherits naturally from the list. The semi-transparent card background in dark mode was causing a visible dark fill over the row.
+- **Delete background hidden at rest; revealed on swipe** — `.swipe-delete-bg` now starts at `opacity: 0` (with a `0.15s ease` transition). A `swipeDeleteBgRef` is wired up in `SortableTodoItem`: opacity snaps to `1` the moment a swipe gesture starts (`handleTouchStart`) and returns to `0` when the swipe snaps back (`snapSwipeBack`) or is cancelled without a swipe (`handleTouchEnd` early-return). The red background and bin icon are therefore invisible at rest and fade in cleanly behind the sliding content row during a swipe.
+
 ## [0.3.1] — 2026-05-19
 
 ### Added

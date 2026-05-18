@@ -198,6 +198,8 @@ body{
   padding-right:16px;
   border-radius:inherit;
   pointer-events:none;
+  opacity:0;
+  transition:opacity 0.15s ease;
 }
 .swipe-delete-icon{
   color:#fff;
@@ -212,10 +214,7 @@ body{
   align-items:center;
   gap:12px;
   padding:12px 6px;
-  background:inherit;
   /* Ensure content sits on top of the red bg */
   z-index:1;
-  /* Inherit background so it covers the red reveal area properly */
-  background:var(--card, #fff);
   will-change:transform;
 }

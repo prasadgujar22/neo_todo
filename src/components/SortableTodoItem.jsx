@@ -31,6 +31,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
 
   // Swipe state
   const swipeContainerRef = useRef(null)
+  const swipeDeleteBgRef = useRef(null)
   const swipeStartX = useRef(null)
   const swipeStartY = useRef(null)
   const swipeDeltaX = useRef(0)
@@ -113,6 +114,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     el.style.transition = 'transform 0.25s ease'
     el.style.transform = 'translateX(0)'
     swipeDeltaX.current = 0
+    if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = '0'
   }
 
   const handleTouchStart = (e) => {
@@ -124,6 +126,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     swipeStartX.current = e.touches[0].clientX
     swipeStartY.current = e.touches[0].clientY
     isSwiping.current = false
+    if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = '1'
   }
 
   const handleTouchMove = (e) => {
@@ -161,6 +164,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     if (isDragging) return
     if (!isSwiping.current) {
       swipeStartX.current = null
+      if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = '0'
       return
     }
 
@@ -205,7 +209,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
         onTouchCancel={handleTouchEnd}
       >
         {/* Red delete background revealed as user swipes left */}
-        <div className="swipe-delete-bg" aria-hidden="true">
+        <div className="swipe-delete-bg" ref={swipeDeleteBgRef} aria-hidden="true">
           <span className="swipe-delete-icon">
             <svg width="20" height="20" viewBox="0 0 15 15" fill="none">
               <path d="M5.5 1h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1ZM2 3.5a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H12v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4H2.5a.5.5 0 0 1-.5-.5ZM4 4v8h7V4H4Zm2 1.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Z" fill="currentColor"/>
