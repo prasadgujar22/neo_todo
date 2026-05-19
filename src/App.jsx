@@ -23,16 +23,6 @@ const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
 const PRIORITIES = ['low', 'medium', 'high']
 
-const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
-function sortTodos(list) {
-  return [...list].sort((a, b) => {
-    const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
-    const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
-    if (aDate !== bDate) return aDate - bDate
-    return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3)
-  })
-}
-
 function getInitialState() {
   const shared = getSharedTodoState()
   if (shared) {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import SortableTodoItem from './SortableTodoItem.jsx'
@@ -32,11 +32,8 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
   const [isRenaming, setIsRenaming] = useState(false)
   const [draftTitle, setDraftTitle] = useState(group?.title ?? '')
   const [sortOrder, setSortOrder] = useState(null) // null = no sort (natural/drag order)
-
-  // Clear sort when drag starts so dnd-kit's live reordering isn't overridden
-  useEffect(() => {
-    if (isDragging) setSortOrder(null)
-  }, [isDragging])
+  // While dragging, ignore any sort order so dnd-kit's live reordering isn't overridden
+  const effectiveSortOrder = isDragging ? null : sortOrder
 
   const containerId = isUngrouped ? 'ungrouped' : String(group.id)
   const { setNodeRef, isOver } = useDroppable({ id: containerId })
@@ -45,8 +42,8 @@ export default function GroupSection({ group, todos, onToggle, onDelete, onUpdat
   const icon = isUngrouped ? <IconClipboard /> : <IconFolder />
 
   const sortedTodos = useMemo(
-    () => sortOrder ? sortByDate(todos, sortOrder) : todos,
-    [todos, sortOrder]
+    () => effectiveSortOrder ? sortByDate(todos, effectiveSortOrder) : todos,
+    [todos, effectiveSortOrder]
   )
 
   const saveRename = () => {
