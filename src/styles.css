@@ -190,12 +190,15 @@ body{
 }
 .swipe-delete-bg{
   --swipe-reveal: 0;
+  --swipe-icon-shift: 14px;
+  --swipe-icon-min-scale: .78;
+  --swipe-icon-scale-range: .22;
   position:absolute;
   inset:0;
   background:linear-gradient(
     90deg,
     color-mix(in srgb, var(--delete) 72%, transparent) 0%,
-    var(--delete) 68%
+    var(--delete) 100%
   );
   display:flex;
   align-items:center;
@@ -224,7 +227,7 @@ body{
   background:color-mix(in srgb, #fff 18%, transparent);
   box-shadow:0 8px 24px rgba(0,0,0,.18);
   opacity:clamp(.18, calc(var(--swipe-reveal) * 1.15), 1);
-  transform:translateX(calc((1 - var(--swipe-reveal)) * 14px)) scale(calc(.78 + var(--swipe-reveal) * .22));
+  transform:translateX(calc((1 - var(--swipe-reveal)) * var(--swipe-icon-shift))) scale(calc(var(--swipe-icon-min-scale) + var(--swipe-reveal) * var(--swipe-icon-scale-range)));
   transition:transform 0.18s cubic-bezier(.2,.8,.2,1), opacity 0.18s ease, background-color 0.18s ease;
 }
 .swipe-delete-bg--armed .swipe-delete-icon{

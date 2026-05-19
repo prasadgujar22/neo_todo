@@ -193,7 +193,6 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
           return
         }
         isSwiping.current = true
-        setSwipeDeleteVisuals(0, false)
       }
 
       // We own the gesture — block page scroll.
