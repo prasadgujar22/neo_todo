@@ -302,8 +302,6 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     }
   }
 
-  const dragHandleStyle = isSwiping.current ? { pointerEvents: 'none' } : {}
-
   return (
     <li
       ref={setNodeRef}
@@ -333,7 +331,6 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
         <div className="swipe-content">
           <button
             className="drag-handle"
-            style={dragHandleStyle}
             {...attributes}
             {...listeners}
             aria-label={`Drag ${todo.text} to reorder`}
