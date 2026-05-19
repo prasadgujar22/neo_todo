@@ -1,6 +1,14 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+
+// Swipe-to-delete tuning. Distance ratios are relative to row width; velocity is px/ms.
+const SWIPE_DIRECTION_LOCK_PX = 8
+const SWIPE_COMMIT_RATIO = 0.35
+const SWIPE_REVEAL_RATIO = 0.18
+const SWIPE_FLICK_VELOCITY = 0.6
+const SWIPE_FLICK_MIN_DISTANCE = 40
+const SWIPE_OVERSHOOT_RESISTANCE = 0.45
 
 const PRIORITY_CYCLE = [undefined, 'low', 'medium', 'high']
 const PRIORITY_LABELS = { low: 'Low', medium: 'Med', high: 'High' }
@@ -34,9 +42,14 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
   const swipeDeleteBgRef = useRef(null)
   const swipeStartX = useRef(null)
   const swipeStartY = useRef(null)
+  const swipeLastX = useRef(0)
+  const swipeLastTime = useRef(0)
+  const swipeVelocity = useRef(0)
   const swipeDeltaX = useRef(0)
   const isSwiping = useRef(false)
   const swipeAnimFrame = useRef(null)
+  const suppressNextClick = useRef(false)
+  const [swipeArmed, setSwipeArmed] = useState(false)
 
   const {
     attributes,
@@ -100,6 +113,14 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
   }
 
   // ── Swipe-to-delete gesture handlers ──────────────────────────────────────
+  // Native non-passive listeners (attached via useEffect below) so that
+  // preventDefault() during a horizontal drag reliably blocks page scroll —
+  // React's synthetic touchmove is passive and cannot cancel scrolling.
+
+  const setSwipeBg = (opacity, armed) => {
+    if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = String(opacity)
+    setSwipeArmed((prev) => (prev === armed ? prev : armed))
+  }
 
   const applySwipeTranslate = (x) => {
     const el = swipeContainerRef.current
@@ -110,87 +131,174 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
 
   const snapSwipeBack = () => {
     const el = swipeContainerRef.current
-    if (!el) return
-    el.style.transition = 'transform 0.25s ease'
-    el.style.transform = 'translateX(0)'
+    if (el) {
+      el.style.transition = 'transform 0.22s cubic-bezier(.2,.8,.2,1)'
+      el.style.transform = 'translateX(0)'
+    }
     swipeDeltaX.current = 0
-    if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = '0'
+    setSwipeBg(0, false)
   }
 
-  const handleTouchStart = (e) => {
-    // Don't interfere when dnd-kit is actively dragging
-    if (isDragging) return
-    // Only track single-finger touches
-    if (e.touches.length !== 1) return
-
-    swipeStartX.current = e.touches[0].clientX
-    swipeStartY.current = e.touches[0].clientY
+  const resetSwipeState = () => {
+    swipeStartX.current = null
+    swipeStartY.current = null
     isSwiping.current = false
-    if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = '1'
+    swipeVelocity.current = 0
+    if (swipeAnimFrame.current) {
+      cancelAnimationFrame(swipeAnimFrame.current)
+      swipeAnimFrame.current = null
+    }
   }
 
-  const handleTouchMove = (e) => {
-    if (isDragging) return
-    if (swipeStartX.current === null) return
+  useEffect(() => {
+    const el = swipeContainerRef.current
+    if (!el) return
 
-    const dx = e.touches[0].clientX - swipeStartX.current
-    const dy = e.touches[0].clientY - swipeStartY.current
+    const onTouchStart = (e) => {
+      if (isDragging) return
+      if (e.touches.length !== 1) return
+      const t = e.touches[0]
+      swipeStartX.current = t.clientX
+      swipeStartY.current = t.clientY
+      swipeLastX.current = t.clientX
+      swipeLastTime.current = e.timeStamp
+      swipeVelocity.current = 0
+      isSwiping.current = false
+      // Don't reveal the red bg yet — wait until we know it's a horizontal swipe.
+    }
 
-    // Determine swipe axis on first significant movement
-    if (!isSwiping.current) {
-      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return
-      if (Math.abs(dy) > Math.abs(dx)) {
-        // Predominantly vertical — let dnd-kit / scroll handle it
-        swipeStartX.current = null
+    const onTouchMove = (e) => {
+      if (isDragging) return
+      if (swipeStartX.current === null) return
+
+      const t = e.touches[0]
+      const dx = t.clientX - swipeStartX.current
+      const dy = t.clientY - swipeStartY.current
+
+      if (!isSwiping.current) {
+        const absDx = Math.abs(dx)
+        const absDy = Math.abs(dy)
+        if (absDx < SWIPE_DIRECTION_LOCK_PX && absDy < SWIPE_DIRECTION_LOCK_PX) return
+        // Bias toward vertical: only claim the gesture if dx clearly dominates.
+        if (absDy >= absDx) {
+          swipeStartX.current = null
+          return
+        }
+        // Only commit to a left-swipe (right-swipes do nothing).
+        if (dx > 0) {
+          swipeStartX.current = null
+          return
+        }
+        isSwiping.current = true
+        setSwipeBg(1, false)
+      }
+
+      // We own the gesture — block page scroll.
+      if (e.cancelable) e.preventDefault()
+
+      const container = swipeContainerRef.current
+      const itemWidth = container ? container.offsetWidth : 300
+      const commitDistance = itemWidth * SWIPE_COMMIT_RATIO
+
+      // Rubber-band resistance past the commit point so it feels physical.
+      let visual = dx
+      if (visual < -commitDistance) {
+        const over = -commitDistance - visual
+        visual = -commitDistance - over * SWIPE_OVERSHOOT_RESISTANCE
+      }
+      const clamped = Math.max(-itemWidth, Math.min(0, visual))
+      swipeDeltaX.current = clamped
+
+      // Track velocity (px/ms) over the most recent frame for flick detection.
+      const dt = e.timeStamp - swipeLastTime.current
+      if (dt > 0) {
+        swipeVelocity.current = (t.clientX - swipeLastX.current) / dt
+      }
+      swipeLastX.current = t.clientX
+      swipeLastTime.current = e.timeStamp
+
+      // Toggle armed state once past the commit distance (visual cue).
+      setSwipeBg(1, Math.abs(dx) >= commitDistance)
+
+      if (swipeAnimFrame.current) cancelAnimationFrame(swipeAnimFrame.current)
+      swipeAnimFrame.current = requestAnimationFrame(() => applySwipeTranslate(clamped))
+    }
+
+    const onTouchEnd = () => {
+      if (isDragging) {
+        resetSwipeState()
+        setSwipeBg(0, false)
         return
       }
-      isSwiping.current = true
-    }
-
-    // We own this gesture — prevent scroll
-    e.preventDefault()
-
-    const container = swipeContainerRef.current
-    const itemWidth = container ? container.offsetWidth : 300
-    // Clamp: only allow sliding left (negative), not right past 0
-    const clamped = Math.max(-itemWidth, Math.min(0, dx))
-    swipeDeltaX.current = clamped
-
-    if (swipeAnimFrame.current) cancelAnimationFrame(swipeAnimFrame.current)
-    swipeAnimFrame.current = requestAnimationFrame(() => applySwipeTranslate(clamped))
-  }
-
-  const handleTouchEnd = () => {
-    if (isDragging) return
-    if (!isSwiping.current) {
-      swipeStartX.current = null
-      if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = '0'
-      return
-    }
-
-    const container = swipeContainerRef.current
-    const itemWidth = container ? container.offsetWidth : 300
-    const threshold = itemWidth * 0.4
-
-    if (Math.abs(swipeDeltaX.current) >= threshold) {
-      // Crossed threshold — animate off-screen then delete
-      const el = swipeContainerRef.current
-      if (el) {
-        el.style.transition = 'transform 0.18s ease'
-        el.style.transform = `translateX(-${itemWidth}px)`
+      if (!isSwiping.current) {
+        resetSwipeState()
+        setSwipeBg(0, false)
+        return
       }
-      setTimeout(() => onDelete(todo.id), 180)
-    } else {
-      // Snap back
-      snapSwipeBack()
+
+      const container = swipeContainerRef.current
+      const itemWidth = container ? container.offsetWidth : 300
+      const commitDistance = itemWidth * SWIPE_COMMIT_RATIO
+      const distance = Math.abs(swipeDeltaX.current)
+      // Negative velocity = moving left (toward delete).
+      const flicking =
+        swipeVelocity.current <= -SWIPE_FLICK_VELOCITY &&
+        distance >= SWIPE_FLICK_MIN_DISTANCE
+
+      if (distance >= commitDistance || flicking) {
+        const containerEl = swipeContainerRef.current
+        if (containerEl) {
+          containerEl.style.transition = 'transform 0.18s ease-out'
+          containerEl.style.transform = `translateX(-${itemWidth}px)`
+        }
+        // Suppress the synthetic click that fires after touchend on the
+        // underlying button/text so the swipe doesn't also toggle the todo.
+        suppressNextClick.current = true
+        setTimeout(() => { suppressNextClick.current = false }, 500)
+        setTimeout(() => onDelete(todo.id), 180)
+      } else if (distance >= SWIPE_REVEAL_RATIO * itemWidth) {
+        // Partial reveal that didn't commit — snap back, but suppress click
+        // so accidentally tapping a control mid-swipe doesn't fire.
+        suppressNextClick.current = true
+        setTimeout(() => { suppressNextClick.current = false }, 400)
+        snapSwipeBack()
+      } else {
+        snapSwipeBack()
+      }
+
+      resetSwipeState()
     }
 
-    swipeStartX.current = null
-    isSwiping.current = false
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true })
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchEnd)
+    }
+    // isDragging is read inside the handlers; keep them in sync by re-binding.
+    // onDelete/todo.id are stable per item but included for correctness.
+    // The other helpers (snapSwipeBack, setSwipeBg, resetSwipeState,
+    // applySwipeTranslate) only operate on refs and the setSwipeArmed setter,
+    // both of which are stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging, onDelete, todo.id])
+
+  // Capture-phase click guard: a successful swipe (or a long partial drag)
+  // suppresses the immediately-following click anywhere in the row, so the
+  // swipe gesture never accidentally toggles, edits, or opens the date picker.
+  const handleClickCapture = (e) => {
+    if (suppressNextClick.current) {
+      suppressNextClick.current = false
+      e.preventDefault()
+      e.stopPropagation()
+    }
   }
 
-  // Disable pointer events on drag handle while a horizontal swipe is in progress
-  // so that dnd-kit doesn't accidentally intercept the touch.
   const dragHandleStyle = isSwiping.current ? { pointerEvents: 'none' } : {}
 
   return (
@@ -203,13 +311,14 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
       <div
         className="swipe-container"
         ref={swipeContainerRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
+        onClickCapture={handleClickCapture}
       >
         {/* Red delete background revealed as user swipes left */}
-        <div className="swipe-delete-bg" ref={swipeDeleteBgRef} aria-hidden="true">
+        <div
+          className={`swipe-delete-bg ${swipeArmed ? 'swipe-delete-bg--armed' : ''}`}
+          ref={swipeDeleteBgRef}
+          aria-hidden="true"
+        >
           <span className="swipe-delete-icon">
             <svg width="20" height="20" viewBox="0 0 15 15" fill="none">
               <path d="M5.5 1h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1ZM2 3.5a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H12v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4H2.5a.5.5 0 0 1-.5-.5ZM4 4v8h7V4H4Zm2 1.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Z" fill="currentColor"/>

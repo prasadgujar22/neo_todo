@@ -199,7 +199,10 @@ body{
   border-radius:inherit;
   pointer-events:none;
   opacity:0;
-  transition:opacity 0.15s ease;
+  transition:opacity 0.15s ease, background-color 0.15s ease;
+}
+.swipe-delete-bg--armed{
+  background:color-mix(in srgb, var(--delete) 88%, #000 12%);
 }
 .swipe-delete-icon{
   color:#fff;
@@ -207,6 +210,11 @@ body{
   align-items:center;
   justify-content:center;
   opacity:.9;
+  transform:scale(1);
+  transition:transform 0.18s cubic-bezier(.2,.8,.2,1);
+}
+.swipe-delete-bg--armed .swipe-delete-icon{
+  transform:scale(1.18);
 }
 .swipe-content{
   position:relative;
