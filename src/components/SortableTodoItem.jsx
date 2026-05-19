@@ -117,8 +117,11 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
   // preventDefault() during a horizontal drag reliably blocks page scroll —
   // React's synthetic touchmove is passive and cannot cancel scrolling.
 
-  const setSwipeBg = (opacity, armed) => {
-    if (swipeDeleteBgRef.current) swipeDeleteBgRef.current.style.opacity = String(opacity)
+  const setSwipeDeleteVisuals = (progress, armed) => {
+    if (swipeDeleteBgRef.current) {
+      swipeDeleteBgRef.current.style.setProperty('--swipe-reveal', String(progress))
+      swipeDeleteBgRef.current.style.opacity = progress > 0 ? '1' : '0'
+    }
     setSwipeArmed((prev) => (prev === armed ? prev : armed))
   }
 
@@ -136,7 +139,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
       el.style.transform = 'translateX(0)'
     }
     swipeDeltaX.current = 0
-    setSwipeBg(0, false)
+    setSwipeDeleteVisuals(0, false)
   }
 
   const resetSwipeState = () => {
@@ -190,7 +193,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
           return
         }
         isSwiping.current = true
-        setSwipeBg(1, false)
+        setSwipeDeleteVisuals(0, false)
       }
 
       // We own the gesture — block page scroll.
@@ -217,8 +220,8 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
       swipeLastX.current = t.clientX
       swipeLastTime.current = e.timeStamp
 
-      // Toggle armed state once past the commit distance (visual cue).
-      setSwipeBg(1, Math.abs(dx) >= commitDistance)
+      const revealProgress = Math.min(1, Math.abs(clamped) / commitDistance)
+      setSwipeDeleteVisuals(revealProgress, Math.abs(dx) >= commitDistance)
 
       if (swipeAnimFrame.current) cancelAnimationFrame(swipeAnimFrame.current)
       swipeAnimFrame.current = requestAnimationFrame(() => applySwipeTranslate(clamped))
@@ -227,12 +230,12 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     const onTouchEnd = () => {
       if (isDragging) {
         resetSwipeState()
-        setSwipeBg(0, false)
+        setSwipeDeleteVisuals(0, false)
         return
       }
       if (!isSwiping.current) {
         resetSwipeState()
-        setSwipeBg(0, false)
+        setSwipeDeleteVisuals(0, false)
         return
       }
 
@@ -246,6 +249,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
         distance >= SWIPE_FLICK_MIN_DISTANCE
 
       if (distance >= commitDistance || flicking) {
+        setSwipeDeleteVisuals(1, true)
         const containerEl = swipeContainerRef.current
         if (containerEl) {
           containerEl.style.transition = 'transform 0.18s ease-out'
