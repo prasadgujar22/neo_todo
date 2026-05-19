@@ -39,6 +39,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
 
   // Swipe state
   const swipeContainerRef = useRef(null)
+  const swipeContentRef = useRef(null)
   const swipeDeleteBgRef = useRef(null)
   const swipeStartX = useRef(null)
   const swipeStartY = useRef(null)
@@ -126,14 +127,14 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
   }
 
   const applySwipeTranslate = (x) => {
-    const el = swipeContainerRef.current
+    const el = swipeContentRef.current
     if (!el) return
     el.style.transition = 'none'
     el.style.transform = `translateX(${x}px)`
   }
 
   const snapSwipeBack = () => {
-    const el = swipeContainerRef.current
+    const el = swipeContentRef.current
     if (el) {
       el.style.transition = 'transform 0.22s cubic-bezier(.2,.8,.2,1)'
       el.style.transform = 'translateX(0)'
@@ -249,10 +250,10 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
 
       if (distance >= commitDistance || flicking) {
         setSwipeDeleteVisuals(1, true)
-        const containerEl = swipeContainerRef.current
-        if (containerEl) {
-          containerEl.style.transition = 'transform 0.18s ease-out'
-          containerEl.style.transform = `translateX(-${itemWidth}px)`
+        const contentEl = swipeContentRef.current
+        if (contentEl) {
+          contentEl.style.transition = 'transform 0.18s ease-out'
+          contentEl.style.transform = `translateX(-${itemWidth}px)`
         }
         // Suppress the synthetic click that fires after touchend on the
         // underlying button/text so the swipe doesn't also toggle the todo.
@@ -328,7 +329,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
         </div>
 
         {/* Actual item content row */}
-        <div className="swipe-content">
+        <div className="swipe-content" ref={swipeContentRef}>
           <button
             className="drag-handle"
             {...attributes}
