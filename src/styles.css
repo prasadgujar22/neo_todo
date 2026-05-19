@@ -107,9 +107,11 @@ body{
 .clearBtn:not(:disabled):hover{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb, var(--accent) 6%, transparent)}
 .clearBtn:disabled{opacity:.4;cursor:not-allowed}
 /* ── Drag & drop ── */
-.drag-handle{background:transparent;border:0;cursor:grab;color:var(--muted);font-size:18px;padding:6px 8px;border-radius:6px;line-height:1;touch-action:none;flex-shrink:0;-webkit-user-select:none;user-select:none}
+.drag-handle{width:40px;min-width:40px;height:40px;background:transparent;border:0;cursor:grab;color:var(--muted);font-size:20px;padding:0;border-radius:10px;line-height:1;touch-action:none;flex-shrink:0;-webkit-user-select:none;user-select:none;display:grid;place-items:center;transition:color .15s,background .15s,box-shadow .15s,transform .15s}
 .drag-handle:active{cursor:grabbing}
 .drag-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.drag-handle:focus-visible{outline:none;box-shadow:0 0 0 3px var(--focus);color:var(--accent)}
+.is-dragging .drag-handle{cursor:grabbing;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);transform:scale(.96)}
 .is-dragging{opacity:.35}
 .drag-overlay{box-shadow:0 8px 32px rgba(0,0,0,.22);border-radius:10px;background:var(--card);backdrop-filter:blur(12px);list-style:none;cursor:grabbing;border:1px solid var(--accent);opacity:.95}
 .sortable-list{min-height:4px}
@@ -238,9 +240,18 @@ body{
   position:relative;
   display:flex;
   align-items:center;
-  gap:12px;
-  padding:12px 6px;
+  gap:10px;
+  padding:10px 6px;
   /* Ensure content sits on top of the red bg */
   z-index:1;
   will-change:transform;
+}
+
+@media (pointer: coarse){
+  .drag-handle{
+    width:44px;
+    min-width:44px;
+    height:44px;
+    border-radius:12px;
+  }
 }

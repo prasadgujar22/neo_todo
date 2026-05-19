@@ -56,10 +56,14 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: todo.id })
+  } = useSortable({
+    id: todo.id,
+    disabled: isEditing || editingDate,
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -332,9 +336,11 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
         <div className="swipe-content" ref={swipeContentRef}>
           <button
             className="drag-handle"
+            ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
             aria-label={`Drag ${todo.text} to reorder`}
+            title="Hold and drag to move task"
           >
             ⠿
           </button>

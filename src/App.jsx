@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   KeyboardSensor,
   useSensor,
@@ -22,6 +22,9 @@ import { getDateInputValue } from './utils/dateInput.js'
 const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
 const PRIORITIES = ['low', 'medium', 'high']
+const MOUSE_DRAG_DISTANCE_PX = 4
+const TOUCH_DRAG_DELAY_MS = 180
+const TOUCH_DRAG_TOLERANCE_PX = 8
 
 function getInitialState() {
   const shared = getSharedTodoState()
@@ -87,8 +90,15 @@ export default function App() {
   const [undo, setUndo] = useState(null)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: MOUSE_DRAG_DISTANCE_PX },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: TOUCH_DRAG_DELAY_MS,
+        tolerance: TOUCH_DRAG_TOLERANCE_PX,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
@@ -216,6 +226,10 @@ export default function App() {
     })
   }
 
+  const handleDragCancel = () => {
+    setActiveId(null)
+  }
+
   const total = todos.length
   const active = todos.filter((t) => !t.completed).length
   const completed = total - active
@@ -326,6 +340,7 @@ export default function App() {
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
           >
             <div className="content">
               {sortedGroups.map((group) => (
