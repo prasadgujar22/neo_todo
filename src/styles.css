@@ -114,6 +114,22 @@ body{
 .is-dragging .drag-handle{cursor:grabbing;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);transform:scale(.96)}
 .is-dragging{opacity:.35}
 .drag-overlay{box-shadow:0 8px 32px rgba(0,0,0,.22);border-radius:10px;background:var(--card);backdrop-filter:blur(12px);list-style:none;cursor:grabbing;border:1px solid var(--accent);opacity:.95}
+.todo-item.drag-overlay {
+  border-bottom: none;
+  border-left-width: 3px;
+}
+.todo-item.drag-overlay.priority-none {
+  border-left-color: var(--accent);
+}
+.todo-item.drag-overlay.priority-low {
+  border-left-color: #22c55e;
+}
+.todo-item.drag-overlay.priority-medium {
+  border-left-color: #f59e0b;
+}
+.todo-item.drag-overlay.priority-high {
+  border-left-color: #ef4444;
+}
 .sortable-list{min-height:4px}
 .sortable-list--empty{min-height:48px}
 .group-section--over .sortable-list--empty{background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:0 0 14px 14px}
@@ -163,8 +179,7 @@ body{
 .app-version{text-align:center;font-size:11px;color:var(--muted);opacity:.45;margin-top:18px;font-family:monospace;background:none;border:none}
 .todo-item{user-select:none}
 .todo-main{user-select:none}
-.drag-ghost-priority{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block}
-.drag-ghost-meta{display:inline-flex;align-items:center;gap:4px;margin-left:auto}
+/* Removed legacy drag ghost styles since we now use SortableTodoItem overlay */
 .sortRow{display:flex;gap:6px;align-items:center}
 .group-sort-row{display:flex;gap:4px;align-items:center;margin-left:auto;margin-right:4px}
 .sortBtn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:border-color .15s,color .15s,background .15s;white-space:nowrap}

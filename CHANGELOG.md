@@ -2,6 +2,12 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.3.7] — 2026-05-20
+
+### Fixed
+- **Improved drag-and-drop grab alignment** — swapped the simplified task placeholder (`DragGhost`) for a fully unified `SortableTodoItem` in the drag overlay. The overlay item now uses the exact same layout structure, padding, priority badges, and due dates, which resolves both the pointer alignment offset (jump) and the visual morphing when grabbing tasks.
+- **Polished drag overlay aesthetics** — customized CSS borders for the dragged overlay to keep the priority indicator line intact while maintaining a sharp, premium styled-border look.
+
 ## [0.3.6] — 2026-05-20
 
 ### Changed

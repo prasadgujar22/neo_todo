@@ -31,7 +31,7 @@ function formatDueTimePart(dueDate) {
   }).format(date)
 }
 
-export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate }) {
+export default function SortableTodoItem({ todo, onToggle = () => {}, onDelete = () => {}, onUpdate = () => {}, isOverlay = false }) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(todo.text)
   const [editingDate, setEditingDate] = useState(false)
@@ -62,10 +62,10 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     isDragging,
   } = useSortable({
     id: todo.id,
-    disabled: isEditing || editingDate,
+    disabled: isEditing || editingDate || isOverlay,
   })
 
-  const style = {
+  const style = isOverlay ? {} : {
     transform: CSS.Transform.toString(transform),
     transition,
   }
@@ -159,6 +159,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
   }
 
   useEffect(() => {
+    if (isOverlay) return
     const el = swipeContainerRef.current
     if (!el) return
 
@@ -294,7 +295,7 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
     // applySwipeTranslate) only operate on refs and the setSwipeArmed setter,
     // both of which are stable across renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging, onDelete, todo.id])
+  }, [isDragging, onDelete, todo.id, isOverlay])
 
   // Capture-phase click guard: a successful swipe (or a long partial drag)
   // suppresses the immediately-following click anywhere in the row, so the
@@ -309,9 +310,9 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
 
   return (
     <li
-      ref={setNodeRef}
+      ref={isOverlay ? undefined : setNodeRef}
       style={style}
-      className={`todo-item priority-${todo.priority ?? 'none'} ${todo.completed ? 'completed' : ''} ${isDragging ? 'is-dragging' : ''}`}
+      className={`todo-item priority-${todo.priority ?? 'none'} ${todo.completed ? 'completed' : ''} ${isDragging ? 'is-dragging' : ''} ${isOverlay ? 'drag-overlay' : ''}`}
     >
       {/* ── Swipe wrapper ── */}
       <div
@@ -336,9 +337,9 @@ export default function SortableTodoItem({ todo, onToggle, onDelete, onUpdate })
         <div className="swipe-content" ref={swipeContentRef}>
           <button
             className="drag-handle"
-            ref={setActivatorNodeRef}
-            {...attributes}
-            {...listeners}
+            ref={isOverlay ? undefined : setActivatorNodeRef}
+            {...(isOverlay ? {} : attributes)}
+            {...(isOverlay ? {} : listeners)}
             aria-label={`Drag ${todo.text} to reorder`}
             title="Hold and drag to move task"
           >

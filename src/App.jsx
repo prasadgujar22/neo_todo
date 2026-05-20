@@ -12,6 +12,7 @@ import {
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable'
 import Stats from './components/Stats.jsx'
 import GroupSection from './components/GroupSection.jsx'
+import SortableTodoItem from './components/SortableTodoItem.jsx'
 import ShareButton from './components/ShareButton.jsx'
 import { formatDayAndDate } from './dateFormatter.js'
 import { getSharedTodoState } from './utils/shareUrl.js'
@@ -55,26 +56,7 @@ function EmptyState() {
   )
 }
 
-const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
-
-function DragGhost({ todo }) {
-  if (!todo) return null
-  return (
-    <li className={`todo-item drag-overlay priority-${todo.priority ?? 'none'} ${todo.completed ? 'completed' : ''}`}>
-      <span className="drag-handle" aria-hidden="true">⠿</span>
-      <span className="toggle" style={{display:'grid',placeItems:'center'}} aria-hidden="true">{todo.completed ? '✔' : ''}</span>
-      <span className="text">{todo.text}</span>
-      {todo.dueDate && (
-        <span className="drag-ghost-meta">
-          {PRIORITY_COLORS[todo.priority] && (
-            <span className="drag-ghost-priority" style={{ background: PRIORITY_COLORS[todo.priority] }} aria-hidden="true" />
-          )}
-        </span>
-      )}
-      <span style={{width:31}} />
-    </li>
-  )
-}
+// Removed legacy DragGhost in favor of unified SortableTodoItem overlay
 
 export default function App() {
   const initialState = useMemo(() => getInitialState(), [])
@@ -370,7 +352,7 @@ export default function App() {
             </div>
 
             <DragOverlay>
-              {activeTodo ? <DragGhost todo={activeTodo} /> : null}
+              {activeTodo ? <SortableTodoItem todo={activeTodo} isOverlay={true} /> : null}
             </DragOverlay>
           </DndContext>
         )}
