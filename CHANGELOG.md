@@ -2,6 +2,38 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.3.6] — 2026-05-20
+
+### Changed
+- **Improved touch drag reordering** — replaced `PointerSensor` with dedicated `MouseSensor` and `TouchSensor`. Mouse drag activates after 4 px of movement; touch drag requires a 180 ms hold with 8 px tolerance, eliminating false drag triggers during swipes.
+- **Explicit drag handle activator** — `setActivatorNodeRef` now wires the grip icon as the dnd-kit activator node, giving it a more precise and reliable touch target.
+- **Drag disabled during editing** — drag is suppressed while a task's text or due-date field is focused, preventing gesture conflicts when typing.
+- **Drag cancel handler** — `onDragCancel` resets `activeId` on cancelled drags so the overlay is never left orphaned.
+
+### Fixed
+- **ESLint clean** — removed unused `sortTodos` import from `App.jsx` and corrected a `setState`-inside-`useEffect` pattern in `GroupSection.jsx`.
+- **Date input test** — corrected `dateInput.test.js` to expect the `datetime-local` value format produced by the updated input helper.
+
+## [0.3.5] — 2026-05-19
+
+### Fixed
+- **Version correction** — bumped package version to match the v0.3.5 tag; the v0.3.4 release had been published under the wrong version string. Functionally identical to v0.3.4.
+
+## [0.3.4] — 2026-05-19
+
+### Fixed
+- **Swipe delete icon layering** — the bin icon now stays behind the task content row inside the revealed delete background. Previously the icon was rendering above the sliding row, causing a visible overlap during the swipe.
+- **Translation target corrected** — the swipe translate is now applied to the task content element only, not the entire `.swipe-container`, so the delete background stays anchored in place during the gesture.
+
+## [0.3.3] — 2026-05-19
+
+### Fixed
+- **Non-passive native touch handling** — swipe gesture listeners are now registered as non-passive via `useEffect` so `preventDefault()` reliably blocks page scroll during a horizontal drag (React's synthetic `onTouchMove` is passive and cannot cancel scrolling).
+- **Flick-to-delete** — a fast left flick (≥ 0.6 px/ms velocity, ≥ 40 px distance) triggers deletion without requiring the full 35 % drag threshold.
+- **Direction locking** — horizontal swipe is committed after 8 px of lateral movement; diagonal or vertical gestures are ignored, preventing accidental deletes during vertical scroll.
+- **Click suppression after swipe** — a `suppressNextClick` guard prevents a `tap` event from toggling a task immediately after a swipe gesture completes.
+- **Rubber-band resistance** — swipes past the commit threshold apply 0.45× resistance so the row doesn't fly off-screen, and an "armed" visual state on the delete background signals that release will confirm deletion.
+
 ## [0.3.2] — 2026-05-19
 
 ### Fixed
