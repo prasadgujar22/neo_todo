@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -17,8 +17,10 @@ import ShareButton from './components/ShareButton.jsx'
 import { formatDayAndDate } from './dateFormatter.js'
 import { getSharedTodoState } from './utils/shareUrl.js'
 import { makeId, normalizeGroups, normalizeTodos } from './utils/todoState.js'
-import { readJsonStorage, useLocalStorageState, writeJsonStorage } from './utils/storage.js'
+import { readJsonStorage, writeJsonStorage } from './utils/storage.js'
 import { getDateInputValue } from './utils/dateInput.js'
+import { isSupabaseConfigured, signInWithGoogle, signOut, supabase } from './utils/supabaseClient.js'
+import { loadRemoteTodoState, saveRemoteTodoState } from './utils/supabaseTodoStore.js'
 
 const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
@@ -26,6 +28,7 @@ const PRIORITIES = ['low', 'medium', 'high']
 const MOUSE_DRAG_DISTANCE_PX = 4
 const TOUCH_DRAG_DELAY_MS = 180
 const TOUCH_DRAG_TOLERANCE_PX = 8
+const REMOTE_SAVE_DELAY_MS = 600
 
 function getInitialState() {
   const shared = getSharedTodoState()
@@ -60,8 +63,8 @@ function EmptyState() {
 
 export default function App() {
   const initialState = useMemo(() => getInitialState(), [])
-  const [todos, setTodos] = useLocalStorageState(STORAGE_KEY, () => initialState.todos)
-  const [groups, setGroups] = useLocalStorageState(GROUPS_KEY, () => initialState.groups)
+  const [todos, setTodos] = useState(() => initialState.todos)
+  const [groups, setGroups] = useState(() => initialState.groups)
   const [input, setInput] = useState('')
   const [selectedGroupId, setSelectedGroupId] = useState('')
   const [newTodoDueDate, setNewTodoDueDate] = useState(() => getDateInputValue())
@@ -70,6 +73,131 @@ export default function App() {
   const [showGroupInput, setShowGroupInput] = useState(false)
   const [activeId, setActiveId] = useState(null)
   const [undo, setUndo] = useState(null)
+  const [session, setSession] = useState(null)
+  const [authBusy, setAuthBusy] = useState(false)
+  const [syncStatus, setSyncStatus] = useState(isSupabaseConfigured ? 'Connecting...' : 'Local mode')
+  const [syncError, setSyncError] = useState('')
+  const todosRef = useRef(todos)
+  const groupsRef = useRef(groups)
+  const remoteReadyRef = useRef(false)
+  const saveQueueRef = useRef(Promise.resolve())
+  const saveRunRef = useRef(0)
+
+  useEffect(() => {
+    todosRef.current = todos
+    writeJsonStorage(STORAGE_KEY, todos)
+  }, [todos])
+
+  useEffect(() => {
+    groupsRef.current = groups
+    writeJsonStorage(GROUPS_KEY, groups)
+  }, [groups])
+
+  useEffect(() => {
+    if (!supabase) return undefined
+    let ignore = false
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (ignore) return
+      if (error) {
+        setSyncError(error.message)
+        setSyncStatus('Auth unavailable')
+        setAuthBusy(false)
+        return
+      }
+      setSession(data.session)
+      if (!data.session) setSyncStatus('Local mode')
+      setAuthBusy(false)
+    })
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+      if (!nextSession) setSyncStatus('Local mode')
+      setAuthBusy(false)
+    })
+
+    return () => {
+      ignore = true
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    const userId = session?.user?.id
+    remoteReadyRef.current = false
+
+    if (!userId) {
+      return undefined
+    }
+
+    let cancelled = false
+
+    const loadUserState = async () => {
+      setSyncError('')
+      setSyncStatus('Syncing...')
+      try {
+        const remote = await loadRemoteTodoState(userId)
+        if (cancelled) return
+
+        const hasRemoteState = remote.todos.length > 0 || remote.groups.length > 0
+        const localSnapshot = {
+          todos: todosRef.current,
+          groups: groupsRef.current,
+        }
+        const hasLocalState = localSnapshot.todos.length > 0 || localSnapshot.groups.length > 0
+
+        if (hasRemoteState) {
+          setTodos(remote.todos)
+          setGroups(remote.groups)
+        } else if (hasLocalState) {
+          await saveRemoteTodoState(userId, localSnapshot)
+        }
+
+        if (!cancelled) {
+          remoteReadyRef.current = true
+          setSyncStatus('Synced')
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSyncError(error.message)
+          setSyncStatus('Sync failed')
+        }
+      }
+    }
+
+    loadUserState()
+
+    return () => {
+      cancelled = true
+    }
+  }, [session?.user?.id])
+
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId || !remoteReadyRef.current) return undefined
+
+    const timeoutId = window.setTimeout(async () => {
+      const saveRun = saveRunRef.current + 1
+      saveRunRef.current = saveRun
+      setSyncError('')
+      setSyncStatus('Saving...')
+      try {
+        saveQueueRef.current = saveQueueRef.current
+          .catch(() => {})
+          .then(() => saveRemoteTodoState(userId, { todos, groups }))
+
+        await saveQueueRef.current
+        if (saveRunRef.current === saveRun) setSyncStatus('Synced')
+      } catch (error) {
+        if (saveRunRef.current === saveRun) {
+          setSyncError(error.message)
+          setSyncStatus('Sync failed')
+        }
+      }
+    }, REMOTE_SAVE_DELAY_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [todos, groups, session?.user?.id])
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -94,6 +222,31 @@ export default function App() {
     setTodos(undo.todos)
     setGroups(undo.groups)
     setUndo(null)
+  }
+
+  const handleSignIn = async () => {
+    setAuthBusy(true)
+    setSyncError('')
+    try {
+      await signInWithGoogle()
+    } catch (error) {
+      setSyncError(error.message)
+      setAuthBusy(false)
+    }
+  }
+
+  const handleSignOut = async () => {
+    setAuthBusy(true)
+    setSyncError('')
+    try {
+      await signOut()
+      remoteReadyRef.current = false
+      setSyncStatus('Local mode')
+    } catch (error) {
+      setSyncError(error.message)
+    } finally {
+      setAuthBusy(false)
+    }
   }
 
   const addTodo = (text) => {
@@ -220,6 +373,7 @@ export default function App() {
   const todayLabel = useMemo(() => formatDayAndDate(), [])
   const activeTodo = useMemo(() => todos.find((t) => t.id === activeId), [todos, activeId])
   const hasContent = total > 0 || groups.length > 0
+  const userEmail = session?.user?.email
 
   const handleTodoKeyDown = (e) => { if (e.key === 'Enter') addTodo(input) }
   const handleGroupKeyDown = (e) => { if (e.key === 'Enter') createGroup(newGroupInput) }
@@ -233,6 +387,28 @@ export default function App() {
       </header>
 
       <section className="card" aria-label="Todo panel">
+        <div className="authBar">
+          <div className="authStatus">
+            <span className={`authStatus-dot ${session ? 'authStatus-dot--online' : ''}`} aria-hidden="true" />
+            <span>{userEmail ? `Signed in as ${userEmail}` : syncStatus}</span>
+            {session && <span className="authSync">{syncStatus}</span>}
+          </div>
+          {isSupabaseConfigured ? (
+            session ? (
+              <button className="authBtn authBtn--secondary" onClick={handleSignOut} disabled={authBusy}>
+                Sign out
+              </button>
+            ) : (
+              <button className="authBtn" onClick={handleSignIn} disabled={authBusy}>
+                Continue with Google
+              </button>
+            )
+          ) : (
+            <span className="authHint">Add Supabase env vars to enable Google sign-in.</span>
+          )}
+        </div>
+        {syncError && <div className="syncError" role="alert">{syncError}</div>}
+
         <div className="inputRow inputRow--stackable">
           <label className="field field--task">
             <span className="field-label">Task</span>

@@ -2,6 +2,16 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.4.0] — 2026-05-21
+
+### Added
+- **Supabase Google sign-in** — optional Google SSO via Supabase Auth, with local mode preserved when Supabase env vars are not configured.
+- **Cloud todo sync** — signed-in users load and save todos/groups to Supabase Postgres.
+- **Local-to-cloud migration** — existing local todos/groups are uploaded on first sign-in when the user's Supabase account has no cloud data yet.
+- **Auth status UI** — added a compact sign-in/status bar with sync state and sign-out support.
+- **Supabase schema** — added `supabase/schema.sql` with `groups` and `todos` tables, indexes, and row-level security policies.
+- **Environment template** — added `.env.example` for `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+
 ## [0.3.7] — 2026-05-20
 
 ### Fixed

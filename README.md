@@ -1,14 +1,17 @@
 # Neo To-Do
 
-Neo To-Do is a polished, minimal React todo app built with Vite. It persists tasks and groups in `localStorage`, supports shareable links, and provides a clean, responsive UI for desktop and mobile.
+Neo To-Do is a polished, minimal React todo app built with Vite. It supports local-only use, optional Supabase-backed Google sign-in with cloud sync, shareable links, and a clean responsive UI for desktop and mobile.
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.3.7
+**Current release:** v0.4.0
 
 ## Features
 
 - Add todos with the **Add** button or by pressing **Enter**
+- Optional **Google sign-in** through Supabase Auth
+- Signed-in users sync tasks and groups to Supabase Postgres
+- Existing local tasks migrate to Supabase automatically on first sign-in when the cloud account is empty
 - Mark tasks complete/incomplete from the checkbox-style toggle or task text
 - Edit todo text inline
 - Add **due date + time** and low/medium/high priority when creating a task
@@ -31,8 +34,8 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
 - Drag and drop tasks between groups, including the **Ungrouped** section
 - Pointer, touch, and keyboard drag support via `@dnd-kit`
 - **Compact drag ghost** centered under the cursor — shows task name, priority dot, and due date for context while reordering
-- Persist todos to `localStorage` under `neo_todo.todos`
-- Persist groups to `localStorage` under `neo_todo.groups`
+- Persist todos and groups locally for anonymous use
+- Persist todos and groups to Supabase for signed-in users
 - **Share via Link** — encodes todos and groups into a compressed, shortened URL through a TinyURL serverless proxy
   - Uses `lz-string` compression in the URL hash so shared todo state does not hit the server
   - Uses the Web Share API when available and falls back to clipboard copy or a manual-copy URL field
@@ -58,6 +61,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
 - React 19
 - Vite 8
 - `@dnd-kit/core`, `@dnd-kit/sortable`, and `@dnd-kit/utilities` for drag-and-drop sorting and cross-group moves
+- `@supabase/supabase-js` for Google SSO and cloud persistence
 - `lz-string` for compact share-link payloads
 - Vercel serverless function for TinyURL shortening
 - `vite-plugin-pwa` for installable/offline support
@@ -74,6 +78,8 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It persists tas
   ci.yml                      # GitHub Actions: test, lint, build
 api/
   shorten.js                  # Vercel serverless TinyURL proxy with URL allow-listing
+supabase/
+  schema.sql                  # Supabase tables, indexes, and row-level security policies
 src/
   App.jsx                     # Main todo/group state, persistence, sharing, and drag/drop orchestration
   dateFormatter.js            # Formats the header day/date label
@@ -85,6 +91,8 @@ src/
   utils/
     dateInput.js              # datetime-local value helper (local-timezone aware)
     shareUrl.js               # Encode/decode todo+group state to/from URL hash
+    supabaseClient.js         # Supabase client and auth helpers
+    supabaseTodoStore.js      # Supabase todo/group load and save helpers
     storage.js                # Safe localStorage read/write helpers
     todoState.js              # State validation, normalization, and ID helpers
 tests/
@@ -113,6 +121,23 @@ Start the development server:
 ```bash
 npm run dev
 ```
+
+### Supabase Google sign-in
+
+Neo To-Do works without Supabase, but Google sign-in and cloud sync require a Supabase project.
+
+1. Create a Supabase project.
+2. In Supabase SQL Editor, run `supabase/schema.sql`.
+3. In Supabase Auth providers, enable Google and add your Google OAuth client credentials.
+4. In Supabase Auth URL configuration, add your local and production app URLs as allowed redirect URLs.
+5. Copy `.env.example` to `.env.local` and fill in:
+
+```bash
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+Restart the dev server after changing env vars.
 
 Run tests:
 
@@ -169,12 +194,12 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 ## Notes
 
-- Core todo and group management is fully client-side and does not require a backend.
-- Todos and groups are saved only in the current browser/profile through `localStorage`.
+- Core todo and group management still works without a backend.
+- Anonymous todos and groups are saved in the current browser/profile through `localStorage`.
+- Signed-in todos and groups are saved to Supabase with row-level security policies scoped to the current user.
 - The date header uses `Intl.DateTimeFormat`, so output follows the user's runtime locale by default.
 - Due date+time uses `hour12: true` so AM/PM is always shown regardless of OS locale.
 - The share URL API (`/api/shorten`) requires Vercel or another compatible serverless environment.
 - The shortener endpoint only accepts app share URLs to avoid becoming a public open-shortener proxy.
 
 hello from antigravity
-
