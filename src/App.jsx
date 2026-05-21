@@ -20,7 +20,11 @@ import { makeId, normalizeGroups, normalizeTodos } from './utils/todoState.js'
 import { readJsonStorage, writeJsonStorage } from './utils/storage.js'
 import { getDateInputValue } from './utils/dateInput.js'
 import { isSupabaseConfigured, signInWithGoogle, signOut, supabase } from './utils/supabaseClient.js'
-import { loadRemoteTodoState, saveRemoteTodoState } from './utils/supabaseTodoStore.js'
+import {
+  loadRemoteTodoState,
+  saveRemoteTodoState,
+} from './utils/supabaseTodoStore.js'
+import { shouldUseRemoteTodoState } from './utils/syncDecision.js'
 
 const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
@@ -139,14 +143,13 @@ export default function App() {
         const remote = await loadRemoteTodoState(userId)
         if (cancelled) return
 
-        const hasRemoteState = remote.todos.length > 0 || remote.groups.length > 0
         const localSnapshot = {
           todos: todosRef.current,
           groups: groupsRef.current,
         }
         const hasLocalState = localSnapshot.todos.length > 0 || localSnapshot.groups.length > 0
 
-        if (hasRemoteState) {
+        if (shouldUseRemoteTodoState(remote)) {
           setTodos(remote.todos)
           setGroups(remote.groups)
         } else if (hasLocalState) {

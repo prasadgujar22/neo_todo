@@ -2,6 +2,12 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.4.1] — 2026-05-21
+
+### Fixed
+- **Cross-device delete sync** — added an initialized sync marker so an intentionally empty cloud todo list does not get repopulated from stale local browser storage on another device.
+- **Supabase sync metadata** — added a `todo_sync_state` table and migration with row-level security policies.
+
 ## [0.4.0] — 2026-05-21
 
 ### Added

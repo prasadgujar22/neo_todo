@@ -46,9 +46,14 @@ function toAppTodo(todo) {
 }
 
 export async function loadRemoteTodoState(userId) {
-  if (!supabase) return { todos: [], groups: [] }
+  if (!supabase) return { todos: [], groups: [], initialized: false }
 
-  const [groupsResult, todosResult] = await Promise.all([
+  const [syncStateResult, groupsResult, todosResult] = await Promise.all([
+    supabase
+      .from('todo_sync_state')
+      .select('initialized')
+      .eq('user_id', userId)
+      .maybeSingle(),
     supabase
       .from('groups')
       .select('id,title,created_at,position')
@@ -63,10 +68,12 @@ export async function loadRemoteTodoState(userId) {
       .order('created_at', { ascending: false }),
   ])
 
+  if (syncStateResult.error) throw syncStateResult.error
   if (groupsResult.error) throw groupsResult.error
   if (todosResult.error) throw todosResult.error
 
   return {
+    initialized: Boolean(syncStateResult.data?.initialized),
     groups: normalizeGroups(groupsResult.data.map(toAppGroup)),
     todos: normalizeTodos(todosResult.data.map(toAppTodo)),
   }
@@ -103,4 +110,14 @@ export async function saveRemoteTodoState(userId, state) {
 
     if (insertTodos.error) throw insertTodos.error
   }
+
+  const syncState = await supabase
+    .from('todo_sync_state')
+    .upsert({
+      user_id: userId,
+      initialized: true,
+      updated_at: new Date().toISOString(),
+    })
+
+  if (syncState.error) throw syncState.error
 }
