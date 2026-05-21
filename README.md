@@ -79,6 +79,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 api/
   shorten.js                  # Vercel serverless TinyURL proxy with URL allow-listing
 supabase/
+  migrations/                 # Supabase migration files for GitHub/CLI deployments
   schema.sql                  # Supabase tables, indexes, and row-level security policies
 src/
   App.jsx                     # Main todo/group state, persistence, sharing, and drag/drop orchestration
@@ -127,7 +128,8 @@ npm run dev
 Neo To-Do works without Supabase, but Google sign-in and cloud sync require a Supabase project.
 
 1. Create a Supabase project.
-2. In Supabase SQL Editor, run `supabase/schema.sql`.
+2. Apply the migration in `supabase/migrations/20260521172000_create_todo_schema.sql` through your Supabase GitHub integration or Supabase CLI.
+   - If applying manually, run the equivalent `supabase/schema.sql` in Supabase SQL Editor.
 3. In Supabase Auth providers, enable Google and add your Google OAuth client credentials.
 4. In Supabase Auth URL configuration, add your local and production app URLs as allowed redirect URLs.
 5. Copy `.env.example` to `.env.local` and fill in:

@@ -10,6 +10,7 @@ All notable changes to Neo To-Do are documented here.
 - **Local-to-cloud migration** — existing local todos/groups are uploaded on first sign-in when the user's Supabase account has no cloud data yet.
 - **Auth status UI** — added a compact sign-in/status bar with sync state and sign-out support.
 - **Supabase schema** — added `supabase/schema.sql` with `groups` and `todos` tables, indexes, and row-level security policies.
+- **Supabase migration** — added a timestamped migration under `supabase/migrations` for GitHub/CLI deployment.
 - **Environment template** — added `.env.example` for `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 ## [0.3.7] — 2026-05-20
