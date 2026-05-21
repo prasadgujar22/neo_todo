@@ -2,6 +2,12 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.4.2] — 2026-05-22
+
+### Fixed
+- **Share link shortening** — replaced TinyURL's deprecated unauthenticated endpoint with the supported authenticated TinyURL API.
+- **Shortener fallback** — share links now fall back to the full compressed app URL when `TINYURL_API_TOKEN` is not configured or TinyURL is unavailable.
+
 ## [0.4.1] — 2026-05-21
 
 ### Fixed

@@ -3,10 +3,11 @@
  * Body: { url: string }
  * Returns: { short: string }
  *
- * Server-side proxy to TinyURL so the browser never hits a CORS wall.
+ * Server-side proxy to TinyURL so the browser never sees the API token.
  */
 
 const MAX_URL_LENGTH = 6000
+const TINYURL_API_URL = 'https://api.tinyurl.com/create'
 const ALLOWED_HOSTS = new Set([
   'neo-todo-peach.vercel.app',
   'localhost',
@@ -23,6 +24,34 @@ export function isAllowedShortenUrl(value) {
   } catch {
     return false
   }
+}
+
+export async function createTinyUrl(url, fetchImpl = fetch) {
+  const token = process.env.TINYURL_API_TOKEN?.trim()
+  if (!token) return null
+
+  const response = await fetchImpl(TINYURL_API_URL, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url,
+      domain: 'tinyurl.com',
+    }),
+  })
+
+  if (!response.ok) throw new Error(`TinyURL responded ${response.status}`)
+
+  const payload = await response.json()
+  const tinyUrl = payload?.data?.tiny_url
+  if (!tinyUrl || typeof tinyUrl !== 'string') {
+    throw new Error('TinyURL response did not include a short URL')
+  }
+
+  return tinyUrl
 }
 
 export default async function handler(req, res) {
@@ -47,13 +76,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(
-      `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`
-    )
-    if (!response.ok) throw new Error(`TinyURL responded ${response.status}`)
+    const short = await createTinyUrl(url)
+    if (short) return res.status(200).json({ short })
 
-    const short = (await response.text()).trim()
-    return res.status(200).json({ short })
+    return res.status(200).json({
+      short: url,
+      warning: 'Shortener not configured; using full share URL',
+    })
   } catch (err) {
     console.error('[shorten] error:', err)
     return res.status(200).json({ short: url, warning: 'Shortener unavailable; using full share URL' })

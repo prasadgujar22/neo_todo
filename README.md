@@ -4,7 +4,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.4.1
+**Current release:** v0.4.2
 
 ## Features
 
@@ -36,10 +36,10 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 - **Compact drag ghost** centered under the cursor — shows task name, priority dot, and due date for context while reordering
 - Persist todos and groups locally for anonymous use
 - Persist todos and groups to Supabase for signed-in users
-- **Share via Link** — encodes todos and groups into a compressed, shortened URL through a TinyURL serverless proxy
+- **Share via Link** — encodes todos and groups into a compressed URL and optionally shortens it through the supported TinyURL API
   - Uses `lz-string` compression in the URL hash so shared todo state does not hit the server
   - Uses the Web Share API when available and falls back to clipboard copy or a manual-copy URL field
-  - Falls back to the full compressed URL if TinyURL is unavailable
+  - Falls back to the full compressed URL if TinyURL is unavailable or not configured
 - Installable/offline-capable PWA via `vite-plugin-pwa`
 - Accessible labels and keyboard-friendly controls
 - Minimal UI dependencies — no component library
@@ -63,7 +63,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 - `@dnd-kit/core`, `@dnd-kit/sortable`, and `@dnd-kit/utilities` for drag-and-drop sorting and cross-group moves
 - `@supabase/supabase-js` for Google SSO and cloud persistence
 - `lz-string` for compact share-link payloads
-- Vercel serverless function for TinyURL shortening
+- Vercel serverless function for TinyURL shortening through the authenticated TinyURL API
 - `vite-plugin-pwa` for installable/offline support
 - CSS custom properties for responsive light/dark theming
 - Node's built-in test runner for utility tests
@@ -77,7 +77,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 .github/workflows/
   ci.yml                      # GitHub Actions: test, lint, build
 api/
-  shorten.js                  # Vercel serverless TinyURL proxy with URL allow-listing
+  shorten.js                  # Vercel serverless TinyURL API proxy with URL allow-listing
 supabase/
   migrations/                 # Supabase migration files for GitHub/CLI deployments
   schema.sql                  # Supabase tables, indexes, and row-level security policies
@@ -140,6 +140,16 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
 Restart the dev server after changing env vars.
+
+### Share link shortening
+
+The app can share full compressed links without any extra setup. To enable TinyURL shortening without the deprecated TinyURL endpoint, create a TinyURL API token and add it as a server-side environment variable:
+
+```bash
+TINYURL_API_TOKEN=your-tinyurl-api-token
+```
+
+On Vercel, add this under **Settings → Environment Variables**, then redeploy.
 
 Run tests:
 
