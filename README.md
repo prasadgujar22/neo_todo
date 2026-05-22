@@ -4,13 +4,14 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.4.4
+**Current release:** v0.4.5
 
 ## Features
 
 - Add todos with the **Add** button or by pressing **Enter**
 - Optional **Google sign-in** through Supabase Auth
 - Signed-in users sync tasks and groups to Supabase Postgres
+- Cloud saves run through a single Supabase RPC with optimistic conflict detection
 - Existing local tasks migrate to Supabase automatically on first sign-in when the cloud account is empty
 - Mark tasks complete/incomplete from the checkbox-style toggle or task text
 - Edit todo text inline
@@ -214,6 +215,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 - Core todo and group management still works without a backend.
 - Anonymous todos and groups are saved in the current browser/profile through `localStorage`.
 - Signed-in todos and groups are saved to Supabase with row-level security policies scoped to the current user.
+- Supabase saves are atomic through `save_todo_state`; concurrent edits are rejected with a visible conflict warning instead of silently overwriting newer remote data.
 - Due task notifications are browser/device-local. The app schedules them while open and catches overdue tasks when reopened. Some mobile browsers only expose notifications after the app is installed/opened as a PWA.
 - The date header uses `Intl.DateTimeFormat`, so output follows the user's runtime locale by default.
 - Due date+time uses `hour12: true` so AM/PM is always shown regardless of OS locale.

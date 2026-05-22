@@ -1,6 +1,13 @@
 import { normalizeGroups, normalizeTodos } from './todoState.js'
 import { supabase } from './supabaseClient.js'
 
+export class RemoteStateConflictError extends Error {
+  constructor() {
+    super('Remote tasks changed on another device. Refresh to load the latest tasks before saving again.')
+    this.name = 'RemoteStateConflictError'
+  }
+}
+
 function toDbGroup(group, userId, position) {
   return {
     id: group.id,
@@ -46,12 +53,12 @@ function toAppTodo(todo) {
 }
 
 export async function loadRemoteTodoState(userId) {
-  if (!supabase) return { todos: [], groups: [], initialized: false }
+  if (!supabase) return { todos: [], groups: [], initialized: false, updatedAt: null }
 
   const [syncStateResult, groupsResult, todosResult] = await Promise.all([
     supabase
       .from('todo_sync_state')
-      .select('initialized')
+      .select('initialized,updated_at')
       .eq('user_id', userId)
       .maybeSingle(),
     supabase
@@ -65,7 +72,7 @@ export async function loadRemoteTodoState(userId) {
       .select('id,text,completed,created_at,group_id,due_date,priority,position')
       .eq('user_id', userId)
       .order('position', { ascending: true })
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: true }),
   ])
 
   if (syncStateResult.error) throw syncStateResult.error
@@ -74,50 +81,33 @@ export async function loadRemoteTodoState(userId) {
 
   return {
     initialized: Boolean(syncStateResult.data?.initialized),
+    updatedAt: syncStateResult.data?.updated_at ?? null,
     groups: normalizeGroups(groupsResult.data.map(toAppGroup)),
     todos: normalizeTodos(todosResult.data.map(toAppTodo)),
   }
 }
 
-export async function saveRemoteTodoState(userId, state) {
-  if (!supabase) return
+export async function saveRemoteTodoState(userId, state, expectedUpdatedAt = null) {
+  if (!supabase) return { updatedAt: null }
 
   const groups = normalizeGroups(state.groups)
   const todos = normalizeTodos(state.todos)
+  const groupIds = new Set(groups.map((group) => group.id))
+  const normalizedTodos = todos.map((todo) => ({
+    ...todo,
+    groupId: todo.groupId && groupIds.has(todo.groupId) ? todo.groupId : null,
+  }))
 
-  const deleteTodos = await supabase.from('todos').delete().eq('user_id', userId)
-  if (deleteTodos.error) throw deleteTodos.error
+  const result = await supabase.rpc('save_todo_state', {
+    p_expected_updated_at: expectedUpdatedAt,
+    p_groups: groups.map((group, index) => toDbGroup(group, userId, index)),
+    p_todos: normalizedTodos.map((todo, index) => toDbTodo(todo, userId, index)),
+  })
 
-  const deleteGroups = await supabase.from('groups').delete().eq('user_id', userId)
-  if (deleteGroups.error) throw deleteGroups.error
+  if (result.error) throw result.error
 
-  if (groups.length > 0) {
-    const insertGroups = await supabase
-      .from('groups')
-      .insert(groups.map((group, index) => toDbGroup(group, userId, index)))
+  const savedState = result.data?.[0]
+  if (savedState?.status === 'conflict') throw new RemoteStateConflictError()
 
-    if (insertGroups.error) throw insertGroups.error
-  }
-
-  if (todos.length > 0) {
-    const groupIds = new Set(groups.map((group) => group.id))
-    const insertTodos = await supabase
-      .from('todos')
-      .insert(todos.map((todo, index) => {
-        const groupId = todo.groupId && groupIds.has(todo.groupId) ? todo.groupId : null
-        return toDbTodo({ ...todo, groupId }, userId, index)
-      }))
-
-    if (insertTodos.error) throw insertTodos.error
-  }
-
-  const syncState = await supabase
-    .from('todo_sync_state')
-    .upsert({
-      user_id: userId,
-      initialized: true,
-      updated_at: new Date().toISOString(),
-    })
-
-  if (syncState.error) throw syncState.error
+  return { updatedAt: savedState?.updated_at ?? null }
 }

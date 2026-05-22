@@ -22,6 +22,7 @@ import { getDateInputValue } from './utils/dateInput.js'
 import { isSupabaseConfigured, signInWithGoogle, signOut, supabase } from './utils/supabaseClient.js'
 import {
   loadRemoteTodoState,
+  RemoteStateConflictError,
   saveRemoteTodoState,
 } from './utils/supabaseTodoStore.js'
 import {
@@ -101,6 +102,7 @@ export default function App() {
   const groupsRef = useRef(groups)
   const notifiedTokensRef = useRef(new Set(readJsonStorage(NOTIFIED_TASKS_KEY, [])))
   const userMutatedRef = useRef(false)
+  const remoteUpdatedAtRef = useRef(null)
   const remoteReadyRef = useRef(false)
   const saveQueueRef = useRef(Promise.resolve())
   const saveRunRef = useRef(0)
@@ -149,6 +151,7 @@ export default function App() {
     remoteReadyRef.current = false
 
     if (!userId) {
+      remoteUpdatedAtRef.current = null
       return undefined
     }
 
@@ -169,11 +172,13 @@ export default function App() {
 
         if (shouldUseRemoteTodoState(remote)) {
           userMutatedRef.current = false
+          remoteUpdatedAtRef.current = remote.updatedAt
           setTodos(remote.todos)
           setGroups(remote.groups)
         } else if (hasLocalState) {
           userMutatedRef.current = true
-          await saveRemoteTodoState(userId, localSnapshot)
+          const saved = await saveRemoteTodoState(userId, localSnapshot, null)
+          remoteUpdatedAtRef.current = saved.updatedAt
         }
 
         if (!cancelled) {
@@ -208,14 +213,19 @@ export default function App() {
       try {
         saveQueueRef.current = saveQueueRef.current
           .catch(() => {})
-          .then(() => saveRemoteTodoState(userId, { todos, groups }))
+          .then(() => saveRemoteTodoState(userId, { todos, groups }, remoteUpdatedAtRef.current))
 
-        await saveQueueRef.current
-        if (saveRunRef.current === saveRun) setSyncStatus('Synced')
+        const saved = await saveQueueRef.current
+        remoteUpdatedAtRef.current = saved.updatedAt
+        if (saveRunRef.current === saveRun) {
+          userMutatedRef.current = false
+          setSyncStatus('Synced')
+          setSyncError('')
+        }
       } catch (error) {
         if (saveRunRef.current === saveRun) {
           setSyncError(error.message)
-          setSyncStatus('Sync failed')
+          setSyncStatus(error instanceof RemoteStateConflictError ? 'Remote changed' : 'Sync failed')
         }
       }
     }, REMOTE_SAVE_DELAY_MS)
@@ -322,6 +332,7 @@ export default function App() {
     try {
       await signOut()
       remoteReadyRef.current = false
+      remoteUpdatedAtRef.current = null
       setSyncStatus('Local mode')
     } catch (error) {
       setSyncError(error.message)

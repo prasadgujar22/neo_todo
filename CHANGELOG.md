@@ -2,6 +2,13 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.4.5] — 2026-05-23
+
+### Fixed
+- **Atomic cloud saves** — replaced client-side delete/reinsert sequences with a single Supabase RPC that runs inside one Postgres transaction.
+- **Conflict detection** — remote saves now compare `todo_sync_state.updated_at` and surface a warning when another device changed the cloud state first.
+- **Stable ordering** — made todo and group load tiebreakers consistently sort by `created_at` ascending after `position`.
+
 ## [0.4.4] — 2026-05-22
 
 ### Fixed
