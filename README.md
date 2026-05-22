@@ -4,7 +4,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.4.2
+**Current release:** v0.4.3
 
 ## Features
 
@@ -16,6 +16,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 - Edit todo text inline
 - Add **due date + time** and low/medium/high priority when creating a task
 - Due date field uses `datetime-local` — pick both date and time in one step
+- Optional browser notifications alert you when active tasks reach their due date
 - **Click the priority badge on any task** to cycle through none → Low → Med → High inline
 - **Click the due date on any task** to edit it inline (Safari-safe, shows full datetime picker)
 - Time displayed on its own line below the date in accent colour for easy scanning
@@ -91,7 +92,9 @@ src/
     Stats.jsx                 # Total / active / completed counters
   utils/
     dateInput.js              # datetime-local value helper (local-timezone aware)
+    notifications.js          # Browser notification permission, scheduling, and delivery helpers
     shareUrl.js               # Encode/decode todo+group state to/from URL hash
+    syncDecision.js           # Remote/local sync precedence helpers
     supabaseClient.js         # Supabase client and auth helpers
     supabaseTodoStore.js      # Supabase todo/group load and save helpers
     storage.js                # Safe localStorage read/write helpers
@@ -99,8 +102,10 @@ src/
 tests/
   dateFormatter.test.js       # Date-formatting coverage
   dateInput.test.js           # Date input value helper coverage
+  notifications.test.js       # Due notification scheduling coverage
   shareUrl.test.js            # Share payload coverage
   shorten.test.js             # Shortener API validation coverage
+  syncDecision.test.js        # Supabase empty-state sync coverage
   todoState.test.js           # State normalizer coverage
 ```
 
@@ -209,6 +214,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 - Core todo and group management still works without a backend.
 - Anonymous todos and groups are saved in the current browser/profile through `localStorage`.
 - Signed-in todos and groups are saved to Supabase with row-level security policies scoped to the current user.
+- Due task notifications are browser/device-local. The app schedules them while open and catches overdue tasks when reopened.
 - The date header uses `Intl.DateTimeFormat`, so output follows the user's runtime locale by default.
 - Due date+time uses `hour12: true` so AM/PM is always shown regardless of OS locale.
 - The share URL API (`/api/shorten`) requires Vercel or another compatible serverless environment.

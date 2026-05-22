@@ -66,6 +66,15 @@ body{
 .authBtn--secondary:hover:not(:disabled){background:color-mix(in srgb, var(--accent) 9%, transparent);color:var(--accent);border-color:color-mix(in srgb, var(--accent) 38%, var(--border))}
 .authHint{color:var(--muted);font-size:12px;text-align:right;line-height:1.25}
 .syncError{margin:-4px 0 14px;padding:9px 11px;border-radius:12px;background:color-mix(in srgb, var(--delete) 10%, transparent);border:1px solid color-mix(in srgb, var(--delete) 24%, transparent);color:var(--delete);font-size:13px}
+.notificationBar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-4px 0 16px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb, var(--bg-accent) 28%, transparent)}
+.notificationStatus{min-width:0;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:700}
+.notificationStatus span:not(.notificationStatus-dot){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notificationStatus-dot{width:8px;height:8px;border-radius:999px;background:color-mix(in srgb, var(--muted) 42%, transparent);box-shadow:0 0 0 3px color-mix(in srgb, var(--muted) 8%, transparent);flex-shrink:0}
+.notificationStatus-dot--on{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent)}
+.notificationHint{font-size:11px;color:var(--accent);font-weight:700}
+.notificationBtn{border:1px solid color-mix(in srgb, var(--accent) 45%, var(--border));border-radius:9px;background:transparent;color:var(--accent);font-family:inherit;font-size:12px;font-weight:800;padding:6px 10px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,opacity .15s}
+.notificationBtn:hover:not(:disabled){background:var(--accent);color:#fff}
+.notificationBtn:disabled{opacity:.5;cursor:not-allowed}
 .inputRow{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px;align-items:flex-end}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field--task{flex:1 1 220px}
@@ -205,6 +214,9 @@ body{
   .authStatus span:not(.authStatus-dot){white-space:normal}
   .authBtn{width:100%}
   .authHint{text-align:left}
+  .notificationBar{align-items:stretch;flex-direction:column;gap:8px}
+  .notificationStatus span:not(.notificationStatus-dot){white-space:normal}
+  .notificationBtn{width:100%}
   .inputRow{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-bottom:10px}
   /* flex:0 0 auto prevents fields from growing vertically in column layout */
   .field,.field--task,.field--compact,.field--date{width:100%;flex:0 0 auto;min-width:0}

@@ -25,9 +25,20 @@ import {
   saveRemoteTodoState,
 } from './utils/supabaseTodoStore.js'
 import { shouldUseRemoteTodoState } from './utils/syncDecision.js'
+import {
+  MAX_NOTIFICATION_DELAY_MS,
+  getDueNotificationCandidates,
+  getDueNotificationToken,
+  getNextDueNotification,
+  getNotificationPermission,
+  isNotificationSupported,
+  requestNotificationPermission,
+  showTaskDueNotification,
+} from './utils/notifications.js'
 
 const STORAGE_KEY = 'neo_todo.todos'
 const GROUPS_KEY = 'neo_todo.groups'
+const NOTIFIED_TASKS_KEY = 'neo_todo.notified_due_tasks'
 const PRIORITIES = ['low', 'medium', 'high']
 const MOUSE_DRAG_DISTANCE_PX = 4
 const TOUCH_DRAG_DELAY_MS = 180
@@ -81,8 +92,11 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false)
   const [syncStatus, setSyncStatus] = useState(isSupabaseConfigured ? 'Connecting...' : 'Local mode')
   const [syncError, setSyncError] = useState('')
+  const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission())
+  const [notificationStatus, setNotificationStatus] = useState('')
   const todosRef = useRef(todos)
   const groupsRef = useRef(groups)
+  const notifiedTokensRef = useRef(new Set(readJsonStorage(NOTIFIED_TASKS_KEY, [])))
   const remoteReadyRef = useRef(false)
   const saveQueueRef = useRef(Promise.resolve())
   const saveRunRef = useRef(0)
@@ -202,6 +216,57 @@ export default function App() {
     return () => window.clearTimeout(timeoutId)
   }, [todos, groups, session?.user?.id])
 
+  useEffect(() => {
+    if (notificationPermission !== 'granted') return undefined
+
+    let cancelled = false
+    let timeoutId = null
+    const notifiedTokens = notifiedTokensRef.current
+
+    const markNotified = (token) => {
+      notifiedTokens.add(token)
+      writeJsonStorage(NOTIFIED_TASKS_KEY, [...notifiedTokens])
+    }
+
+    const notifyDueTasks = async () => {
+      const candidates = getDueNotificationCandidates(todos, notifiedTokens)
+      for (const todo of candidates) {
+        if (cancelled) return
+        const token = getDueNotificationToken(todo)
+        if (!token) continue
+
+        try {
+          const sent = await showTaskDueNotification(todo)
+          if (sent) markNotified(token)
+        } catch (error) {
+          console.error('Notification failed:', error)
+        }
+      }
+    }
+
+    const scheduleNextDueTask = () => {
+      if (cancelled) return
+      const nextDue = getNextDueNotification(todos, notifiedTokens)
+      if (!nextDue) return
+
+      const delay = Math.min(
+        Math.max(nextDue.dueTime - Date.now(), 0),
+        MAX_NOTIFICATION_DELAY_MS
+      )
+      timeoutId = window.setTimeout(async () => {
+        await notifyDueTasks()
+        scheduleNextDueTask()
+      }, delay)
+    }
+
+    notifyDueTasks().then(scheduleNextDueTask)
+
+    return () => {
+      cancelled = true
+      if (timeoutId) window.clearTimeout(timeoutId)
+    }
+  }, [todos, notificationPermission])
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: MOUSE_DRAG_DISTANCE_PX },
@@ -249,6 +314,21 @@ export default function App() {
       setSyncError(error.message)
     } finally {
       setAuthBusy(false)
+    }
+  }
+
+  const enableNotifications = async () => {
+    setNotificationStatus('')
+    try {
+      const permission = await requestNotificationPermission()
+      setNotificationPermission(permission)
+      if (permission === 'granted') {
+        setNotificationStatus('Due task notifications enabled')
+      } else if (permission === 'denied') {
+        setNotificationStatus('Notifications are blocked in this browser')
+      }
+    } catch (error) {
+      setNotificationStatus(error.message)
     }
   }
 
@@ -377,6 +457,7 @@ export default function App() {
   const activeTodo = useMemo(() => todos.find((t) => t.id === activeId), [todos, activeId])
   const hasContent = total > 0 || groups.length > 0
   const userEmail = session?.user?.email
+  const notificationSupported = isNotificationSupported()
 
   const handleTodoKeyDown = (e) => { if (e.key === 'Enter') addTodo(input) }
   const handleGroupKeyDown = (e) => { if (e.key === 'Enter') createGroup(newGroupInput) }
@@ -411,6 +492,31 @@ export default function App() {
           )}
         </div>
         {syncError && <div className="syncError" role="alert">{syncError}</div>}
+        <div className="notificationBar">
+          <div className="notificationStatus">
+            <span
+              className={`notificationStatus-dot ${notificationPermission === 'granted' ? 'notificationStatus-dot--on' : ''}`}
+              aria-hidden="true"
+            />
+            <span>
+              {notificationPermission === 'granted'
+                ? 'Due notifications on'
+                : notificationSupported
+                  ? 'Due notifications off'
+                  : 'Notifications unsupported'}
+            </span>
+            {notificationStatus && <span className="notificationHint">{notificationStatus}</span>}
+          </div>
+          {notificationSupported && notificationPermission !== 'granted' && (
+            <button
+              className="notificationBtn"
+              onClick={enableNotifications}
+              disabled={notificationPermission === 'denied'}
+            >
+              Enable
+            </button>
+          )}
+        </div>
 
         <div className="inputRow inputRow--stackable">
           <label className="field field--task">

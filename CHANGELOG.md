@@ -2,6 +2,12 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.4.3] — 2026-05-22
+
+### Added
+- **Due task notifications** — added browser notification permission controls and local due-date scheduling for active tasks.
+- **Notification safeguards** — each task due date notifies once per browser/device, and edited due dates can notify again at the new time.
+
 ## [0.4.2] — 2026-05-22
 
 ### Fixed
