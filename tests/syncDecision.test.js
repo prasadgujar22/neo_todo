@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { shouldUseRemoteTodoState } from '../src/utils/syncDecision.js'
+import {
+  shouldSaveRemoteTodoState,
+  shouldUseRemoteTodoState,
+} from '../src/utils/syncDecision.js'
 
 test('initialized empty remote state wins over stale local state', () => {
   assert.equal(shouldUseRemoteTodoState({
@@ -24,4 +27,16 @@ test('existing remote rows are used even before sync marker backfill', () => {
     todos: [{ id: 'todo-1' }],
     groups: [],
   }), true)
+})
+
+test('empty remote saves require an explicit user mutation', () => {
+  assert.equal(shouldSaveRemoteTodoState({ todos: [], groups: [] }, false), false)
+  assert.equal(shouldSaveRemoteTodoState({ todos: [], groups: [] }, true), true)
+})
+
+test('non-empty remote saves are allowed without user mutation', () => {
+  assert.equal(shouldSaveRemoteTodoState({
+    todos: [{ id: 'todo-1' }],
+    groups: [],
+  }, false), true)
 })

@@ -24,7 +24,10 @@ import {
   loadRemoteTodoState,
   saveRemoteTodoState,
 } from './utils/supabaseTodoStore.js'
-import { shouldUseRemoteTodoState } from './utils/syncDecision.js'
+import {
+  shouldSaveRemoteTodoState,
+  shouldUseRemoteTodoState,
+} from './utils/syncDecision.js'
 import {
   MAX_NOTIFICATION_DELAY_MS,
   getDueNotificationCandidates,
@@ -97,6 +100,7 @@ export default function App() {
   const todosRef = useRef(todos)
   const groupsRef = useRef(groups)
   const notifiedTokensRef = useRef(new Set(readJsonStorage(NOTIFIED_TASKS_KEY, [])))
+  const userMutatedRef = useRef(false)
   const remoteReadyRef = useRef(false)
   const saveQueueRef = useRef(Promise.resolve())
   const saveRunRef = useRef(0)
@@ -164,9 +168,11 @@ export default function App() {
         const hasLocalState = localSnapshot.todos.length > 0 || localSnapshot.groups.length > 0
 
         if (shouldUseRemoteTodoState(remote)) {
+          userMutatedRef.current = false
           setTodos(remote.todos)
           setGroups(remote.groups)
         } else if (hasLocalState) {
+          userMutatedRef.current = true
           await saveRemoteTodoState(userId, localSnapshot)
         }
 
@@ -192,6 +198,7 @@ export default function App() {
   useEffect(() => {
     const userId = session?.user?.id
     if (!userId || !remoteReadyRef.current) return undefined
+    if (!shouldSaveRemoteTodoState({ todos, groups }, userMutatedRef.current)) return undefined
 
     const timeoutId = window.setTimeout(async () => {
       const saveRun = saveRunRef.current + 1
@@ -280,13 +287,19 @@ export default function App() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
+  const markUserMutation = () => {
+    userMutatedRef.current = true
+  }
+
   const withUndo = (message, action) => {
+    markUserMutation()
     setUndo({ message, todos, groups })
     action()
   }
 
   const restoreUndo = () => {
     if (!undo) return
+    markUserMutation()
     setTodos(undo.todos)
     setGroups(undo.groups)
     setUndo(null)
@@ -335,6 +348,7 @@ export default function App() {
   const addTodo = (text) => {
     const trimmed = text?.trim()
     if (!trimmed) return
+    markUserMutation()
     setTodos((t) => [{
       id: makeId(),
       text: trimmed,
@@ -347,11 +361,15 @@ export default function App() {
     setInput('')
   }
 
-  const updateTodo = (id, patch) =>
+  const updateTodo = (id, patch) => {
+    markUserMutation()
     setTodos((list) => list.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+  }
 
-  const toggleTodo = (id) =>
+  const toggleTodo = (id) => {
+    markUserMutation()
     setTodos((list) => list.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)))
+  }
 
   const deleteTodo = (id) => withUndo('Task deleted', () =>
     setTodos((list) => list.filter((t) => t.id !== id))
@@ -364,6 +382,7 @@ export default function App() {
   const createGroup = (title) => {
     const trimmed = title?.trim()
     if (!trimmed) return
+    markUserMutation()
     const group = { id: makeId(), title: trimmed, createdAt: new Date().toISOString() }
     setGroups((g) => [...g, group])
     setNewGroupInput('')
@@ -371,8 +390,10 @@ export default function App() {
     setSelectedGroupId(group.id)
   }
 
-  const renameGroup = (groupId, title) =>
+  const renameGroup = (groupId, title) => {
+    markUserMutation()
     setGroups((g) => g.map((grp) => (grp.id === groupId ? { ...grp, title } : grp)))
+  }
 
   const deleteGroup = (groupId) => {
     const group = groups.find((g) => g.id === groupId)
@@ -400,6 +421,7 @@ export default function App() {
 
   const handleDragOver = ({ active, over }) => {
     if (!over) return
+    markUserMutation()
     setTodos((prev) => {
       const activeId = String(active.id)
       const overId = String(over.id)
@@ -427,6 +449,7 @@ export default function App() {
     setActiveId(null)
     if (!over || String(active.id) === String(over.id)) return
 
+    markUserMutation()
     setTodos((prev) => {
       const activeId = String(active.id)
       const overId = String(over.id)
@@ -503,7 +526,7 @@ export default function App() {
                 ? 'Due notifications on'
                 : notificationSupported
                   ? 'Due notifications off'
-                  : 'Notifications unsupported'}
+                  : 'Install app for notifications'}
             </span>
             {notificationStatus && <span className="notificationHint">{notificationStatus}</span>}
           </div>

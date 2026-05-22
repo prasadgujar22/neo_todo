@@ -4,7 +4,7 @@ Neo To-Do is a polished, minimal React todo app built with Vite. It supports loc
 
 **Live app:** https://neo-todo-peach.vercel.app/
 
-**Current release:** v0.4.3
+**Current release:** v0.4.4
 
 ## Features
 
@@ -214,7 +214,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 - Core todo and group management still works without a backend.
 - Anonymous todos and groups are saved in the current browser/profile through `localStorage`.
 - Signed-in todos and groups are saved to Supabase with row-level security policies scoped to the current user.
-- Due task notifications are browser/device-local. The app schedules them while open and catches overdue tasks when reopened.
+- Due task notifications are browser/device-local. The app schedules them while open and catches overdue tasks when reopened. Some mobile browsers only expose notifications after the app is installed/opened as a PWA.
 - The date header uses `Intl.DateTimeFormat`, so output follows the user's runtime locale by default.
 - Due date+time uses `hour12: true` so AM/PM is always shown regardless of OS locale.
 - The share URL API (`/api/shorten`) requires Vercel or another compatible serverless environment.

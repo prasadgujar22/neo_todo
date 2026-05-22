@@ -2,6 +2,12 @@
 
 All notable changes to Neo To-Do are documented here.
 
+## [0.4.4] — 2026-05-22
+
+### Fixed
+- **Cloud sync safety** — blocked empty cloud saves unless the browser session has an explicit user edit, preventing startup or browser-refresh edge cases from wiping remote tasks.
+- **Mobile notification copy** — clarified notification availability for mobile browsers that do not expose the Web Notification API in normal tabs.
+
 ## [0.4.3] — 2026-05-22
 
 ### Added
